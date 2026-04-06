@@ -1,13 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import api from '../api/axiosConfig';
+import type { Space } from '../types/workspace';
 
-const WORKSPACES = [
-    { id: 1, name: 'Quiet Workspace Box', location: 'Building A · Floor 2', type: 'Pod', capacity: 1, rate: '₱150/hr', rating: '4.8', available: true },
-    { id: 2, name: 'Focus Pod Alpha', location: 'Building A · Floor 3', type: 'Pod', capacity: 2, rate: '₱200/hr', rating: '4.6', available: true },
-    { id: 3, name: 'Creative Studio', location: 'Building B · Floor 1', type: 'Studio', capacity: 6, rate: '₱500/hr', rating: '4.9', available: false },
-    { id: 4, name: 'Standard Meeting Room', location: 'Building A · Floor 1', type: 'Meeting Room', capacity: 10, rate: '₱350/hr', rating: '4.5', available: true },
-    { id: 5, name: 'Executive Boardroom', location: 'Building C · Floor 5', type: 'Boardroom', capacity: 16, rate: '₱800/hr', rating: '4.7', available: true },
-    { id: 6, name: 'Open Collaborative Area', location: 'Building B · Floor 2', type: 'Open Space', capacity: 20, rate: '₱100/hr', rating: '4.4', available: true },
+const SAMPLE_WORKSPACES: Space[] = [
+    {
+        id: 'sample-pod-1',
+        name: 'Focus Pod A1',
+        location: 'Cebu IT Park',
+        type: 'Pod',
+        capacity: 1,
+        hourlyRate: 120,
+        rating: 4.7,
+        available: true,
+    },
+    {
+        id: 'sample-meeting-1',
+        name: 'Sprint Room B',
+        location: 'Ayala Center Cebu',
+        type: 'Meeting Room',
+        capacity: 8,
+        hourlyRate: 450,
+        rating: 4.8,
+        available: true,
+    },
+    {
+        id: 'sample-studio-1',
+        name: 'Creator Studio C3',
+        location: 'Mandaue City',
+        type: 'Studio',
+        capacity: 4,
+        hourlyRate: 380,
+        rating: 4.6,
+        available: false,
+    },
+    {
+        id: 'sample-boardroom-1',
+        name: 'Boardroom Skyline',
+        location: 'Cebu Business Park',
+        type: 'Boardroom',
+        capacity: 14,
+        hourlyRate: 900,
+        rating: 4.9,
+        available: true,
+    },
 ];
 
 const Dashboard: React.FC = () => {
@@ -16,13 +52,46 @@ const Dashboard: React.FC = () => {
     const [typeFilter, setTypeFilter] = useState('');
     const [capacityFilter, setCapacityFilter] = useState('');
 
+    // Replaced hardcoded array with state
+    const [workspaces, setWorkspaces] = useState<Space[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [usingSampleData, setUsingSampleData] = useState(false);
+
+    useEffect(() => {
+        const fetchSpaces = async () => {
+            try {
+                const response = await api.get('/spaces');
+                const apiSpaces = Array.isArray(response.data)
+                    ? response.data
+                    : Array.isArray(response.data?.data)
+                        ? response.data.data
+                        : [];
+
+                if (apiSpaces.length > 0) {
+                    setWorkspaces(apiSpaces);
+                    setUsingSampleData(false);
+                } else {
+                    setWorkspaces(SAMPLE_WORKSPACES);
+                    setUsingSampleData(true);
+                }
+            } catch (error) {
+                console.error('Failed to fetch spaces', error);
+                setWorkspaces(SAMPLE_WORKSPACES);
+                setUsingSampleData(true);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchSpaces();
+    }, []);
+
     const handleLogout = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('userRole');
         navigate('/login');
     };
 
-    const filtered = WORKSPACES.filter((ws) => {
+    const filtered = workspaces.filter((ws) => {
         const searchMatch =
             ws.name.toLowerCase().includes(search.toLowerCase()) ||
             ws.location.toLowerCase().includes(search.toLowerCase());
@@ -44,7 +113,7 @@ const Dashboard: React.FC = () => {
                 <div className="brand">WorkSpace</div>
                 <nav className="topbar-links">
                     <Link to="/dashboard" className="active">Dashboard</Link>
-                    <Link to="/login">Login</Link>
+                    <Link to="/reservations">Reservations</Link>
                 </nav>
                 <button className="secondary-btn" onClick={handleLogout}>Log out</button>
             </header>
@@ -55,7 +124,6 @@ const Dashboard: React.FC = () => {
                         <h1>Workspaces</h1>
                         <p>Browse and book available spaces.</p>
                     </div>
-                    <button className="primary-btn">+ New Booking</button>
                 </section>
 
                 <section className="filters">
@@ -81,7 +149,15 @@ const Dashboard: React.FC = () => {
                     </select>
                 </section>
 
-                <div className="results">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</div>
+                {loading ? (
+                    <div className="results">Loading catalog...</div>
+                ) : (
+                    <div className="results">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</div>
+                )}
+
+                {!loading && usingSampleData && (
+                    <div className="results">Showing sample workspaces while live catalog is unavailable.</div>
+                )}
 
                 <section className="grid">
                     {filtered.map((ws) => (
@@ -90,13 +166,16 @@ const Dashboard: React.FC = () => {
                             <h3 className="ws-name">{ws.name}</h3>
                             <div className="ws-location">{ws.location}</div>
                             <div className="ws-meta">
-                                <span>{ws.capacity} {ws.capacity === 1 ? 'person' : 'people'} · {ws.rate}</span>
+                                <span>{ws.capacity} {ws.capacity === 1 ? 'person' : 'people'} · ₱{ws.hourlyRate}/hr</span>
                                 <span>★ {ws.rating} · {ws.available ? 'Available' : 'Occupied'}</span>
                             </div>
                             <div className="ws-actions">
-                                <button className="secondary-btn">Details</button>
-                                <button className="primary-btn" disabled={!ws.available}>
-                                    {ws.available ? 'Book' : 'Unavailable'}
+                                <button
+                                    className="primary-btn"
+                                    disabled={!ws.available}
+                                    onClick={() => navigate(`/space/${ws.id}`, { state: { space: ws } })}
+                                >
+                                    {ws.available ? 'View & Book' : 'Unavailable'}
                                 </button>
                             </div>
                         </article>

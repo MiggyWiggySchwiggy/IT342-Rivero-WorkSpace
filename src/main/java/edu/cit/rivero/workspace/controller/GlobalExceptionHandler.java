@@ -1,6 +1,7 @@
 package edu.cit.rivero.workspace.controller;
 
 import edu.cit.rivero.workspace.common.ApiResponse;
+import edu.cit.rivero.workspace.common.BusinessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -9,6 +10,17 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    // Handles explicit business errors with custom codes (BOOK-001, PAY-001, etc.)
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Object>> handleBusinessException(BusinessException ex) {
+        ApiResponse<Object> response = ApiResponse.error(
+                ex.getCode(),
+                ex.getMessage(),
+                null
+        );
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 
     // Handles Bad Password / Email (401 Unauthorized)
     @ExceptionHandler(BadCredentialsException.class)

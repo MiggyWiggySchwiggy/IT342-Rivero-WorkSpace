@@ -12,6 +12,7 @@ import edu.cit.rivero.workspace.repository.ReservationRepository;
 import edu.cit.rivero.workspace.repository.SpaceRepository;
 import edu.cit.rivero.workspace.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import edu.cit.rivero.workspace.strategy.PaymentStrategy;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -30,12 +31,18 @@ public class ReservationService {
     private final SpaceRepository spaceRepository;
     private final UserRepository userRepository;
 
+    // 1. Strategy is properly declared
+    private final PaymentStrategy paymentStrategy;
+
+    // 2. Strategy is added to the constructor for Spring Injection
     public ReservationService(ReservationRepository reservationRepository,
                               SpaceRepository spaceRepository,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              PaymentStrategy paymentStrategy) {
         this.reservationRepository = reservationRepository;
         this.spaceRepository = spaceRepository;
         this.userRepository = userRepository;
+        this.paymentStrategy = paymentStrategy;
     }
 
     public ReservationResponseData checkout(ReservationCheckoutRequest request, String userEmail) {
@@ -68,18 +75,23 @@ public class ReservationService {
             throw new BusinessException("BOOK-001", "Schedule conflict: this workspace is already booked for that time slot.");
         }
 
-        PaymentMethodRequest paymentMethod = request.getPaymentMethod();
-        String normalizedCard = paymentMethod.getCardNumber().replaceAll("\\D", "");
-        if (normalizedCard.length() != 16 || paymentMethod.getCvv() == null || paymentMethod.getCvv().length() != 3) {
-            throw new BusinessException("PAY-001", "Payment declined: invalid sandbox card details.");
-        }
-
+        // Calculate Pricing
         long durationMinutes = Duration.between(start, end).toMinutes();
         long billableHours = Math.max(1, (long) Math.ceil(durationMinutes / 60.0));
 
         BigDecimal hourlyRate = BigDecimal.valueOf(space.getHourlyRate()).setScale(2, RoundingMode.HALF_UP);
         BigDecimal subtotal = hourlyRate.multiply(BigDecimal.valueOf(billableHours));
         BigDecimal total = subtotal.add(SERVICE_FEE);
+
+        // 3. NEW STRATEGY LOGIC APPLIED HERE (Old hardcoded checks removed!)
+        boolean paymentSuccess = paymentStrategy.processPayment(request.getPaymentMethod(), total.doubleValue());
+        if (!paymentSuccess) {
+            throw new BusinessException("PAY-001", "Payment Declined: " + paymentStrategy.getDeclineReason());
+        }
+
+        // Setup the saved reservation
+        PaymentMethodRequest paymentMethod = request.getPaymentMethod();
+        String normalizedCard = paymentMethod.getCardNumber().replaceAll("\\D", "");
 
         Reservation reservation = new Reservation();
         reservation.setUser(user);
@@ -93,7 +105,8 @@ public class ReservationService {
         reservation.setStatus("CONFIRMED");
         reservation.setPaymentStatus("PAID");
         reservation.setPaymentReference("SIM-" + System.currentTimeMillis());
-        reservation.setCardLast4(normalizedCard.substring(normalizedCard.length() - 4));
+        // Safely get last 4 digits if card is long enough, otherwise just use what was provided
+        reservation.setCardLast4(normalizedCard.length() >= 4 ? normalizedCard.substring(normalizedCard.length() - 4) : "****");
 
         Reservation savedReservation = reservationRepository.save(reservation);
 
@@ -108,23 +121,23 @@ public class ReservationService {
         );
     }
 
-        public List<ReservationHistoryItemData> getMyReservations(String userEmail) {
+    public List<ReservationHistoryItemData> getMyReservations(String userEmail) {
         return reservationRepository.findByUserEmailOrderByCreatedAtDesc(userEmail)
-            .stream()
-            .map(reservation -> new ReservationHistoryItemData(
-                reservation.getId(),
-                reservation.getSpace().getId(),
-                reservation.getSpace().getName(),
-                reservation.getSpace().getLocation(),
-                reservation.getStatus(),
-                reservation.getPaymentStatus(),
-                reservation.getStartTime().toString(),
-                reservation.getEndTime().toString(),
-                reservation.getTotalAmount().toString(),
-                reservation.getCreatedAt() != null ? reservation.getCreatedAt().toString() : null
-            ))
-            .toList();
-        }
+                .stream()
+                .map(reservation -> new ReservationHistoryItemData(
+                        reservation.getId(),
+                        reservation.getSpace().getId(),
+                        reservation.getSpace().getName(),
+                        reservation.getSpace().getLocation(),
+                        reservation.getStatus(),
+                        reservation.getPaymentStatus(),
+                        reservation.getStartTime().toString(),
+                        reservation.getEndTime().toString(),
+                        reservation.getTotalAmount().toString(),
+                        reservation.getCreatedAt() != null ? reservation.getCreatedAt().toString() : null
+                ))
+                .toList();
+    }
 
     private void validateRequest(ReservationCheckoutRequest request) {
         if (request == null || request.getSpaceId() == null || request.getSpaceId().isBlank()) {

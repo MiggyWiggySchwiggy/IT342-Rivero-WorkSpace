@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import SpaceDetailView from './components/SpaceDetailView';
 import Checkout from './components/Checkout';
 import Reservations from './components/Reservations';
+import OAuth2RedirectHandler from './components/OAuth2RedirectHandler';
 
 // Protect routes: Redirects to login if accessToken is missing
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
@@ -23,6 +24,7 @@ const App: React.FC = () => {
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
 
                 {/* Protected Routes */}
                 <Route path="/dashboard" element={

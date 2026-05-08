@@ -1,13 +1,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-import Login from './components/Login';
-import Register from './components/Register';
-import Dashboard from './components/Dashboard';
-import SpaceDetailView from './components/SpaceDetailView';
-import Checkout from './components/Checkout';
-import Reservations from './components/Reservations';
-import OAuth2RedirectHandler from './components/OAuth2RedirectHandler';
+import Login from './features/auth/Login';
+import Register from './features/auth/Register';
+import Dashboard from './features/spaces/Dashboard';
+import SpaceDetailView from './features/spaces/SpaceDetailView';
+import Checkout from './features/reservations/Checkout';
+import Reservations from './features/reservations/Reservations';
+import OAuth2RedirectHandler from './features/auth/OAuth2RedirectHandler';
 
 // Protect routes: Redirects to login if accessToken is missing
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {

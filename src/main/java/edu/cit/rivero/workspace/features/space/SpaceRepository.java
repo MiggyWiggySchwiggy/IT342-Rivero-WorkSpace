@@ -1,4 +1,4 @@
-package edu.cit.rivero.workspace.common;
+package edu.cit.rivero.workspace.features.space;
 import edu.cit.rivero.workspace.features.auth.*;
 import edu.cit.rivero.workspace.features.space.*;
 import edu.cit.rivero.workspace.features.reservation.*;
@@ -7,16 +7,10 @@ import edu.cit.rivero.workspace.common.*;
 import edu.cit.rivero.workspace.security.*;
 
 
-public class BusinessException extends RuntimeException {
+import edu.cit.rivero.workspace.features.space.Space;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-    private final String code;
-
-    public BusinessException(String code, String message) {
-        super(message);
-        this.code = code;
-    }
-
-    public String getCode() {
-        return code;
-    }
+@Repository
+public interface SpaceRepository extends JpaRepository<Space, String> {
 }

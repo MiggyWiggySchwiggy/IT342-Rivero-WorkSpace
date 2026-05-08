@@ -1,16 +1,6 @@
 package edu.cit.rivero.workspace.security;
+
 import edu.cit.rivero.workspace.features.auth.*;
-import edu.cit.rivero.workspace.features.space.*;
-import edu.cit.rivero.workspace.features.reservation.*;
-import edu.cit.rivero.workspace.features.reservation.strategy.*;
-import edu.cit.rivero.workspace.common.*;
-import edu.cit.rivero.workspace.security.*;
-
-
-import edu.cit.rivero.workspace.features.auth.User;
-import edu.cit.rivero.workspace.features.auth.Role;
-import edu.cit.rivero.workspace.features.auth.RoleRepository;
-import edu.cit.rivero.workspace.features.auth.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +16,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 
 @Configuration
@@ -61,7 +52,8 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                        .requestMatchers("/api/v1/auth/me").authenticated()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
@@ -92,6 +84,13 @@ public class SecurityConfig {
 
                             String token = jwtService.generateToken(user);
                             response.sendRedirect(frontendOAuthRedirectUri + "?token=" + token);
+                        })
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"success\":false,\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Authentication required\"}}");
                         })
                 )
                 .sessionManagement(session -> session

@@ -1,17 +1,6 @@
 package edu.cit.rivero.workspace.features.auth;
-import edu.cit.rivero.workspace.features.auth.*;
-import edu.cit.rivero.workspace.features.space.*;
-import edu.cit.rivero.workspace.features.reservation.*;
-import edu.cit.rivero.workspace.features.reservation.strategy.*;
+
 import edu.cit.rivero.workspace.common.*;
-import edu.cit.rivero.workspace.security.*;
-
-
-import edu.cit.rivero.workspace.common.ApiResponse;
-import edu.cit.rivero.workspace.features.auth.AuthResponseData;
-import edu.cit.rivero.workspace.features.auth.LoginRequest;
-import edu.cit.rivero.workspace.features.auth.RegisterRequest;
-import edu.cit.rivero.workspace.features.auth.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,5 +26,11 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponseData>> login(@RequestBody LoginRequest request) {
         AuthResponseData responseData = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success(responseData));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserDto>> getCurrentUser() {
+        UserDto userDto = authService.getCurrentUser();
+        return ResponseEntity.ok(ApiResponse.success(userDto));
     }
 }

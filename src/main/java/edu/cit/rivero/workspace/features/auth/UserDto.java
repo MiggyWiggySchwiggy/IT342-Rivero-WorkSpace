@@ -1,24 +1,22 @@
 package edu.cit.rivero.workspace.features.auth;
-import edu.cit.rivero.workspace.features.auth.*;
-import edu.cit.rivero.workspace.features.space.*;
-import edu.cit.rivero.workspace.features.reservation.*;
-import edu.cit.rivero.workspace.features.reservation.strategy.*;
-import edu.cit.rivero.workspace.common.*;
-import edu.cit.rivero.workspace.security.*;
-
 
 public class UserDto {
+    private Integer id;
     private String email;
     private String firstname;
     private String lastname;
     private String role;
 
-    public UserDto(String email, String firstname, String lastname, String role) {
+    public UserDto(Integer id, String email, String firstname, String lastname, String role) {
+        this.id = id;
         this.email = email;
         this.firstname = firstname;
         this.lastname = lastname;
         this.role = role;
     }
+
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }

@@ -19,3 +19,9 @@ api.interceptors.request.use((config) => {
 });
 
 export default api;
+
+// Fetch the currently authenticated user's profile
+export async function fetchCurrentUser() {
+    const response = await api.get('/auth/me');
+    return response.data.data; // Unwrap ApiResponse envelope
+}

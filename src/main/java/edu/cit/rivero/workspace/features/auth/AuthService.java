@@ -18,6 +18,7 @@ import edu.cit.rivero.workspace.features.auth.UserRepository;
 import edu.cit.rivero.workspace.security.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -95,5 +96,19 @@ public class AuthService {
         );
 
         return new AuthResponseData(userDto, jwtToken, refreshToken);
+    }
+
+    public UserDto getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found in database."));
+
+        return new UserDto(
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getRole().getRoleName()
+        );
     }
 }

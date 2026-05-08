@@ -38,4 +38,10 @@ public class AuthController {
         AuthResponseData responseData = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success(responseData));
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserDto>> getCurrentUser() {
+        UserDto userDto = authService.getCurrentUser();
+        return ResponseEntity.ok(ApiResponse.success(userDto));
+    }
 }

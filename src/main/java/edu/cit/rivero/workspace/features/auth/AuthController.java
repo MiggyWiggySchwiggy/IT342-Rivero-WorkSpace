@@ -1,17 +1,6 @@
 package edu.cit.rivero.workspace.features.auth;
-import edu.cit.rivero.workspace.features.auth.*;
-import edu.cit.rivero.workspace.features.space.*;
-import edu.cit.rivero.workspace.features.reservation.*;
-import edu.cit.rivero.workspace.features.reservation.strategy.*;
+
 import edu.cit.rivero.workspace.common.*;
-import edu.cit.rivero.workspace.security.*;
-
-
-import edu.cit.rivero.workspace.common.ApiResponse;
-import edu.cit.rivero.workspace.features.auth.AuthResponseData;
-import edu.cit.rivero.workspace.features.auth.LoginRequest;
-import edu.cit.rivero.workspace.features.auth.RegisterRequest;
-import edu.cit.rivero.workspace.features.auth.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

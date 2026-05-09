@@ -160,9 +160,15 @@ const buildDetails = (space: Space): SpaceDetails => {
     const dbCheckIn = space.checkInWindow;
     const dbCancellation = space.cancellationPolicy;
 
+    const parsedImageUrls = space.imageUrl 
+        ? space.imageUrl.split(',').map(url => url.trim()).filter(Boolean).map(url => url.startsWith('http') ? url : `http://localhost:8080${url}`)
+        : [];
+
     if (sampleDetails) {
         return {
             ...sampleDetails,
+            imageUrl: parsedImageUrls.length > 0 ? parsedImageUrls[0] : sampleDetails.imageUrl,
+            photos: parsedImageUrls.length > 0 ? parsedImageUrls : sampleDetails.photos,
             amenities: dbAmenities.length > 0 ? dbAmenities : sampleDetails.amenities,
             utilities: dbUtilities.length > 0 ? dbUtilities : sampleDetails.utilities,
             checkInWindow: dbCheckIn || sampleDetails.checkInWindow,
@@ -176,9 +182,9 @@ const buildDetails = (space: Space): SpaceDetails => {
 
     return {
         description: space.description || `A comfortable ${space.type.toLowerCase()} in ${space.location}, suitable for focused work and team collaboration.`,
-        imageUrl: space.imageUrl || 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1400&q=80',
-        photos: [
-            space.imageUrl || 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1400&q=80',
+        imageUrl: parsedImageUrls.length > 0 ? parsedImageUrls[0] : 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1400&q=80',
+        photos: parsedImageUrls.length > 0 ? parsedImageUrls : [
+            'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1400&q=80',
             'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1400&q=80',
             'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1400&q=80',
         ],

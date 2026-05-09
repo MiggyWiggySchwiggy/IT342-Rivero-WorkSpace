@@ -162,9 +162,17 @@ const Dashboard: React.FC = () => {
                 <section className="grid">
                     {filtered.map((ws) => (
                         <article className="ws-card" key={ws.id}>
-                            <div className="ws-type">{ws.type}</div>
-                            <h3 className="ws-name">{ws.name}</h3>
-                            <div className="ws-location">{ws.location}</div>
+                            {ws.imageUrl && (
+                                <img
+                                    src={`http://localhost:8080${ws.imageUrl.split(',')[0].trim()}`}
+                                    alt={ws.name}
+                                    style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: 'var(--radius) var(--radius) 0 0' }}
+                                />
+                            )}
+                            <div style={{ padding: '1.25rem' }}>
+                                <div className="ws-type">{ws.type}</div>
+                                <h3 className="ws-name">{ws.name}</h3>
+                                <div className="ws-location">{ws.location}</div>
                             <div className="ws-meta">
                                 <span>{ws.capacity} {ws.capacity === 1 ? 'person' : 'people'} · ₱{ws.hourlyRate}/hr</span>
                                 <span>★ {ws.rating} · {ws.available ? 'Available' : 'Occupied'}</span>
@@ -177,6 +185,7 @@ const Dashboard: React.FC = () => {
                                 >
                                     {ws.available ? 'View & Book' : 'Unavailable'}
                                 </button>
+                            </div>
                             </div>
                         </article>
                     ))}

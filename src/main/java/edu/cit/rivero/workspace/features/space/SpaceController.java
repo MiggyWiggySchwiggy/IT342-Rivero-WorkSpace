@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping("/api/v1/spaces")
@@ -119,6 +121,16 @@ public class SpaceController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(ApiResponse.success(booked));
+    }
+
+    // ── Admin: Upload image ──
+
+    @PostMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<Space>> uploadImage(
+            @PathVariable String id, @RequestParam("file") MultipartFile[] files) {
+        Space updated = spaceService.uploadImage(id, files);
+        return ResponseEntity.ok(ApiResponse.success(updated));
     }
 }
 

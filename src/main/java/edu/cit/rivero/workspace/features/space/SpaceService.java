@@ -3,6 +3,11 @@ package edu.cit.rivero.workspace.features.space;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
@@ -69,6 +74,43 @@ public class SpaceService {
         availabilitySlotRepository.flush();
         slots.forEach(s -> { s.setId(null); s.setSpaceId(spaceId); });
         return availabilitySlotRepository.saveAll(slots);
+    }
+
+    public Space uploadImage(String id, MultipartFile[] files) {
+        Space existing = spaceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Workspace not found with id: " + id));
+
+        try {
+            Path uploadPath = Paths.get("uploads").toAbsolutePath().normalize();
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            StringBuilder urls = new StringBuilder();
+            for (MultipartFile file : files) {
+                if (file.isEmpty()) continue;
+                String originalFilename = file.getOriginalFilename();
+                String extension = originalFilename != null && originalFilename.contains(".") 
+                        ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
+                        : ".jpg";
+                String newFilename = UUID.randomUUID().toString() + extension;
+
+                Path filePath = uploadPath.resolve(newFilename);
+                Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                
+                if (urls.length() > 0) urls.append(",");
+                urls.append("/uploads/").append(newFilename);
+            }
+
+            if (existing.getImageUrl() != null && !existing.getImageUrl().trim().isEmpty()) {
+                urls.insert(0, existing.getImageUrl() + ",");
+            }
+            
+            existing.setImageUrl(urls.toString().replaceAll(",$", ""));
+            return spaceRepository.save(existing);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to store files", e);
+        }
     }
 }
 

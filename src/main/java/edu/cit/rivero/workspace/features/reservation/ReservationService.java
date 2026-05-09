@@ -131,6 +131,37 @@ public class ReservationService {
                 .toList();
     }
 
+    // ── Admin methods ──
+
+    public List<AdminReservationItemData> getAllReservations() {
+        return reservationRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(r -> new AdminReservationItemData(
+                        r.getId(),
+                        r.getUser().getEmail(),
+                        r.getUser().getFirstName(),
+                        r.getUser().getLastName(),
+                        r.getSpace().getId(),
+                        r.getSpace().getName(),
+                        r.getSpace().getLocation(),
+                        r.getStatus(),
+                        r.getPaymentStatus(),
+                        r.getStartTime().toString(),
+                        r.getEndTime().toString(),
+                        r.getTotalAmount().toString(),
+                        r.getCreatedAt() != null ? r.getCreatedAt().toString() : null
+                ))
+                .toList();
+    }
+
+    public void cancelReservation(Long id) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reservation not found."));
+        reservation.setStatus("CANCELLED");
+        reservation.setPaymentStatus("REFUNDED");
+        reservationRepository.save(reservation);
+    }
+
     private void validateRequest(ReservationCheckoutRequest request) {
         if (request == null || request.getSpaceId() == null || request.getSpaceId().isBlank()) {
             throw new RuntimeException("Space selection is required.");

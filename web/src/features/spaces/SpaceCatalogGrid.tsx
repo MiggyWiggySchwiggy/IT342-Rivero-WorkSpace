@@ -31,7 +31,7 @@ export const SpaceCatalogGrid: React.FC<Props> = ({ onSelectSpace }) => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
       {spaces.map((space) => (
         <div key={space.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-          <img src={space.imageUrl || '/placeholder.jpg'} alt={space.name} className="w-full h-48 object-cover" />
+          <img src={space.imageUrl ? `http://localhost:8080${space.imageUrl.split(',')[0].trim()}` : '/placeholder.jpg'} alt={space.name} className="w-full h-48 object-cover" />
           <div className="p-5">
             <h3 className="text-xl font-bold text-gray-900">{space.name}</h3>
             <p className="text-gray-500 mt-1">Capacity: up to {space.capacity} people</p>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api, { createSpace, updateSpace, deleteSpace } from '../shared/axiosConfig';
+import api, { createSpace, updateSpace, deleteSpace, uploadSpaceImage } from '../shared/axiosConfig';
 import type { Space } from '../spaces/types';
 
 /* ─── Toast component ─── */
@@ -115,6 +115,7 @@ const AdminWorkspaceManager: React.FC = () => {
         navigate('/login');
     };
 
+
     /* ─── Render ─── */
     return (
         <>
@@ -210,9 +211,54 @@ const AdminWorkspaceManager: React.FC = () => {
                                     </span>
                                 </div>
 
+
+                                {/* ── Photos (Visual Gallery) ── */}
+                                <div style={{ borderTop: '1px solid var(--border)', margin: '0.8rem 0 0.6rem', paddingTop: '0.7rem' }}>
+                                    <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Space Photos</span>
+                                </div>
                                 <div className="field">
-                                    <label>Image URL</label>
-                                    <input name="imageUrl" value={form.imageUrl} onChange={handleChange} placeholder="https://..." />
+                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                                        {form.imageUrl && form.imageUrl.split(',').map(url => url.trim()).filter(Boolean).map((imgUrl, i) => (
+                                            <div key={i} style={{ position: 'relative', width: 80, height: 80, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                                                <img src={imgUrl.startsWith('http') ? imgUrl : `http://localhost:8080${imgUrl}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="space" />
+                                                <button type="button" onClick={async () => {
+                                                    const newUrls = form.imageUrl.split(',').map(u=>u.trim()).filter(Boolean);
+                                                    newUrls.splice(i, 1);
+                                                    const newImageUrl = newUrls.join(',');
+                                                    setForm({...form, imageUrl: newImageUrl});
+                                                    try {
+                                                        await api.put(`/spaces/${editingId}`, { ...form, imageUrl: newImageUrl });
+                                                        toast('Image removed successfully.');
+                                                        fetchSpaces();
+                                                    } catch (err) {
+                                                        toast('Failed to remove image.', 'error');
+                                                    }
+                                                }} style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>✕</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {editingId ? (
+                                        <>
+                                            <label className="secondary-btn" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', cursor: 'pointer', display: 'inline-block' }}>
+                                                + Add Photos
+                                                <input type="file" multiple accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+                                                    const files = e.target.files;
+                                                    if (!files || files.length === 0) return;
+                                                    try {
+                                                        const updatedSpace = await uploadSpaceImage(editingId, files);
+                                                        setForm({ ...form, imageUrl: updatedSpace.imageUrl });
+                                                        toast('Images added successfully.');
+                                                        fetchSpaces();
+                                                    } catch (err) {
+                                                        toast('Failed to upload images.', 'error');
+                                                    }
+                                                }} />
+                                            </label>
+                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '0.3rem' }}>Uploading and removing images saves instantly.</p>
+                                        </>
+                                    ) : (
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>You can upload photos after creating the workspace.</p>
+                                    )}
                                 </div>
 
                                 <div style={{ borderTop: '1px solid var(--border)', margin: '0.8rem 0 0.6rem', paddingTop: '0.7rem' }}>

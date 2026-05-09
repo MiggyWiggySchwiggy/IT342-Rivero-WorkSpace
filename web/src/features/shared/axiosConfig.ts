@@ -73,3 +73,18 @@ export async function fetchSpaceBookings(spaceId: string) {
     const response = await api.get(`/spaces/${spaceId}/bookings`);
     return response.data.data;
 }
+
+// ── Image Upload ──
+
+export async function uploadSpaceImage(spaceId: string, files: FileList) {
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('file', files[i]);
+    }
+    const response = await api.post(`/spaces/${spaceId}/image`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data.data;
+}

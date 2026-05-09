@@ -1,5 +1,5 @@
 export interface Space {
-    id: string; // Or number, depending on your Spring Boot UUID setup
+    id: string;
     name: string;
     location: string;
     type: string;
@@ -9,5 +9,9 @@ export interface Space {
     available: boolean;
     description?: string;
     imageUrl?: string;
+    amenities?: string;      // Comma-separated list
+    utilities?: string;      // Comma-separated list
+    checkInWindow?: string;
+    cancellationPolicy?: string;
 }
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import api from '../shared/axiosConfig';
+import api, { fetchAvailability, fetchSpaceBookings } from '../shared/axiosConfig';
 import type { Space } from '../spaces/types';
 
 type Review = {
@@ -23,11 +23,14 @@ type SpaceDetails = {
 type AvailabilitySlot = {
     label: string;
     available: boolean;
+    rawStart?: string; // "08:00"
+    rawEnd?: string;   // "11:00"
 };
 
 type AvailabilityDay = {
     dayLabel: string;
     dateLabel: string;
+    dateISO: string; // "2026-05-11"
     slots: AvailabilitySlot[];
 };
 
@@ -145,12 +148,30 @@ const SAMPLE_SPACE_DETAILS: Record<string, SpaceDetails> = {
     },
 };
 
+const parseCSV = (csv: string | undefined | null): string[] =>
+    csv ? csv.split(',').map(s => s.trim()).filter(Boolean) : [];
+
 const buildDetails = (space: Space): SpaceDetails => {
     const sampleDetails = SAMPLE_SPACE_DETAILS[space.id];
+
+    // Parse DB fields — use them if provided
+    const dbAmenities = parseCSV(space.amenities);
+    const dbUtilities = parseCSV(space.utilities);
+    const dbCheckIn = space.checkInWindow;
+    const dbCancellation = space.cancellationPolicy;
+
     if (sampleDetails) {
-        return sampleDetails;
+        return {
+            ...sampleDetails,
+            amenities: dbAmenities.length > 0 ? dbAmenities : sampleDetails.amenities,
+            utilities: dbUtilities.length > 0 ? dbUtilities : sampleDetails.utilities,
+            checkInWindow: dbCheckIn || sampleDetails.checkInWindow,
+            cancellation: dbCancellation || sampleDetails.cancellation,
+            description: space.description || sampleDetails.description,
+        };
     }
 
+    const defaultAmenities = ['Comfortable seating', 'Clean workspace', 'Well-lit interior', 'Easy access'];
     const defaultUtilities = ['Fast Wi-Fi', 'Power outlets', 'Air conditioning', 'Reception support'];
 
     return {
@@ -161,10 +182,10 @@ const buildDetails = (space: Space): SpaceDetails => {
             'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1400&q=80',
             'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1400&q=80',
         ],
-        amenities: ['Comfortable seating', 'Clean workspace', 'Well-lit interior', 'Easy access'],
-        utilities: defaultUtilities,
-        checkInWindow: 'Anytime between 8:00 AM - 9:00 PM',
-        cancellation: 'Free cancellation up to 4 hours before check-in.',
+        amenities: dbAmenities.length > 0 ? dbAmenities : defaultAmenities,
+        utilities: dbUtilities.length > 0 ? dbUtilities : defaultUtilities,
+        checkInWindow: dbCheckIn || 'Anytime between 8:00 AM - 9:00 PM',
+        cancellation: dbCancellation || 'Free cancellation up to 4 hours before check-in.',
         reviews: [
             { author: 'Verified Guest', rating: Math.max(4, Math.round(space.rating)), comment: 'Great overall workspace experience.' },
             { author: 'Community Member', rating: Math.max(4, Math.round(space.rating - 0.2)), comment: 'Smooth booking and reliable facilities.' },
@@ -172,25 +193,149 @@ const buildDetails = (space: Space): SpaceDetails => {
     };
 };
 
-const buildAvailabilityPreview = (spaceId: string): AvailabilityDay[] => {
+const toDateISO = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+const buildAvailabilityFromApi = (apiSlots: { dayOfWeek: number; startTime: string; endTime: string; blocked: boolean }[]): AvailabilityDay[] => {
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const baseSlots = ['8:00-11:00', '12:00-3:00', '4:00-7:00'];
+
+    return Array.from({ length: 7 }).map((_, index) => {
+        const date = new Date();
+        date.setDate(date.getDate() + index);
+        const dow = date.getDay();
+
+        const daySlots: AvailabilitySlot[] = apiSlots
+            .filter(s => s.dayOfWeek === dow)
+            .map(s => ({ label: `${s.startTime}–${s.endTime}`, available: !s.blocked, rawStart: s.startTime, rawEnd: s.endTime }));
+
+        return {
+            dayLabel: dayNames[dow],
+            dateLabel: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            dateISO: toDateISO(date),
+            slots: daySlots.length > 0 ? daySlots : [{ label: 'Closed', available: false }],
+        };
+    });
+};
+
+const buildFallbackAvailability = (spaceId: string): AvailabilityDay[] => {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const rawSlots = [
+        { label: '8:00-11:00', rawStart: '08:00', rawEnd: '11:00' },
+        { label: '12:00-3:00', rawStart: '12:00', rawEnd: '15:00' },
+        { label: '4:00-7:00',  rawStart: '16:00', rawEnd: '19:00' },
+    ];
     const hashSeed = spaceId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
     return Array.from({ length: 7 }).map((_, index) => {
         const date = new Date();
         date.setDate(date.getDate() + index);
-
-        const slots = baseSlots.map((slot, slotIndex) => {
-            const available = (hashSeed + index + slotIndex) % 4 !== 0;
-            return { label: slot, available };
-        });
-
+        const slots: AvailabilitySlot[] = rawSlots.map((s, slotIndex) => ({
+            label: s.label,
+            available: (hashSeed + index + slotIndex) % 4 !== 0,
+            rawStart: s.rawStart,
+            rawEnd: s.rawEnd,
+        }));
         return {
             dayLabel: dayNames[date.getDay()],
             dateLabel: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            dateISO: toDateISO(date),
             slots,
         };
+    });
+};
+
+/* ── Booking-aware slot splitting ── */
+
+interface BookingRange {
+    startTime: string; // ISO datetime e.g. "2026-05-11T08:00"
+    endTime: string;
+}
+
+/**
+ * Convert "HH:mm" time string to total minutes for easy comparison.
+ */
+const timeToMin = (t: string): number => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + (m || 0);
+};
+
+const minToTime = (m: number): string => {
+    const h = Math.floor(m / 60);
+    const min = m % 60;
+    return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+};
+
+/**
+ * Given availability days and real bookings, split each open slot into
+ * booked (red) and remaining open (green) sub-ranges.
+ */
+const splitSlotsWithBookings = (days: AvailabilityDay[], bookings: BookingRange[]): AvailabilityDay[] => {
+    // Pre-parse bookings into local dates/times
+    // Backend returns UTC via LocalDateTime.toString() WITHOUT a "Z" suffix,
+    // so JS would treat it as local time. Append "Z" to force UTC parsing.
+    const ensureUTC = (s: string) => (s.endsWith('Z') || s.includes('+') || s.includes('-', 10)) ? s : s + 'Z';
+
+    const parsed = bookings.map(b => {
+        const start = new Date(ensureUTC(b.startTime));
+        const end = new Date(ensureUTC(b.endTime));
+        return {
+            dateISO: toDateISO(start),
+            startMin: start.getHours() * 60 + start.getMinutes(),
+            endMin: end.getHours() * 60 + end.getMinutes(),
+        };
+    });
+
+    return days.map(day => {
+        const newSlots: AvailabilitySlot[] = [];
+
+        for (const slot of day.slots) {
+            if (!slot.available || !slot.rawStart || !slot.rawEnd) {
+                newSlots.push(slot);
+                continue;
+            }
+
+            const slotStartMin = timeToMin(slot.rawStart);
+            const slotEndMin = timeToMin(slot.rawEnd);
+
+            // Find bookings that overlap this slot on this day
+            const overlapping = parsed
+                .filter(b => b.dateISO === day.dateISO && b.startMin < slotEndMin && b.endMin > slotStartMin)
+                .map(b => ({
+                    start: Math.max(b.startMin, slotStartMin),
+                    end: Math.min(b.endMin, slotEndMin),
+                }))
+                .sort((a, b) => a.start - b.start);
+
+            if (overlapping.length === 0) {
+                newSlots.push(slot);
+                continue;
+            }
+
+            // Walk through the slot, inserting open gaps and booked ranges
+            let cursor = slotStartMin;
+
+            for (const booking of overlapping) {
+                if (cursor < booking.start) {
+                    // Open gap before this booking
+                    const s = minToTime(cursor);
+                    const e = minToTime(booking.start);
+                    newSlots.push({ label: `${s}–${e}`, available: true, rawStart: s, rawEnd: e });
+                }
+                // Booked range
+                const bs = minToTime(booking.start);
+                const be = minToTime(booking.end);
+                newSlots.push({ label: `${bs}–${be} ✕`, available: false, rawStart: bs, rawEnd: be });
+                cursor = booking.end;
+            }
+
+            // Remaining open gap after last booking
+            if (cursor < slotEndMin) {
+                const s = minToTime(cursor);
+                const e = minToTime(slotEndMin);
+                newSlots.push({ label: `${s}–${e}`, available: true, rawStart: s, rawEnd: e });
+            }
+        }
+
+        return { ...day, slots: newSlots };
     });
 };
 
@@ -207,6 +352,8 @@ const SpaceDetail: React.FC = () => {
     const [endTime, setEndTime] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+    const [availability, setAvailability] = useState<AvailabilityDay[]>([]);
+    const [selectedSlotKey, setSelectedSlotKey] = useState<string>('');
 
     useEffect(() => {
         const normalizedId = decodeURIComponent((id ?? '').trim());
@@ -259,6 +406,45 @@ const SpaceDetail: React.FC = () => {
         setActivePhotoIndex(0);
     }, [space?.id]);
 
+    // Fetch real availability from API + bookings, then merge
+    useEffect(() => {
+        if (!space) return;
+        (async () => {
+            try {
+                const [apiSlots, bookings] = await Promise.all([
+                    fetchAvailability(space.id).catch(() => null),
+                    fetchSpaceBookings(space.id).catch(() => []),
+                ]);
+
+                let days: AvailabilityDay[];
+                if (apiSlots && apiSlots.length > 0) {
+                    days = buildAvailabilityFromApi(apiSlots);
+                } else {
+                    days = buildFallbackAvailability(space.id);
+                }
+
+                // Split slots based on real bookings
+                if (bookings && bookings.length > 0) {
+                    days = splitSlotsWithBookings(days, bookings);
+                }
+
+                setAvailability(days);
+            } catch {
+                setAvailability(buildFallbackAvailability(space.id));
+            }
+        })();
+    }, [space?.id]);
+
+    const handleSlotClick = (day: AvailabilityDay, slot: AvailabilitySlot) => {
+        if (!slot.available || !slot.rawStart || !slot.rawEnd) return;
+        const key = `${day.dateISO}-${slot.rawStart}-${slot.rawEnd}`;
+        setSelectedSlotKey(key);
+        // Auto-fill the datetime-local inputs: "2026-05-11T08:00"
+        setStartTime(`${day.dateISO}T${slot.rawStart}`);
+        setEndTime(`${day.dateISO}T${slot.rawEnd}`);
+        setErrorMsg('');
+    };
+
     const handleProceed = () => {
         setErrorMsg('');
         const start = new Date(startTime);
@@ -305,7 +491,7 @@ const SpaceDetail: React.FC = () => {
     }
 
     const details = buildDetails(space);
-    const availability = buildAvailabilityPreview(space.id);
+    // availability is now loaded via useEffect above
     const photos = details.photos.length > 0 ? details.photos : [details.imageUrl];
     const similarSpaces = SAMPLE_WORKSPACES
         .filter((candidate) => candidate.id !== space.id)
@@ -401,6 +587,9 @@ const SpaceDetail: React.FC = () => {
 
                     <article className="detail-panel">
                         <h2>Availability Preview (Next 7 Days)</h2>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '-0.2rem 0 0.6rem' }}>
+                            Click an available slot to auto-fill your booking times.
+                        </p>
                         <div className="availability-grid">
                             {availability.map((day) => (
                                 <div className="availability-day" key={`${day.dayLabel}-${day.dateLabel}`}>
@@ -409,11 +598,27 @@ const SpaceDetail: React.FC = () => {
                                         <span>{day.dateLabel}</span>
                                     </div>
                                     <div className="availability-slots">
-                                        {day.slots.map((slot) => (
-                                            <span className={`slot ${slot.available ? 'open' : 'closed'}`} key={slot.label}>
-                                                {slot.label}
-                                            </span>
-                                        ))}
+                                        {day.slots.map((slot) => {
+                                            const key = `${day.dateISO}-${slot.rawStart}-${slot.rawEnd}`;
+                                            const isSelected = selectedSlotKey === key && slot.available;
+                                            return (
+                                                <span
+                                                    className={`slot ${slot.available ? 'open' : 'closed'}`}
+                                                    key={slot.label}
+                                                    onClick={() => handleSlotClick(day, slot)}
+                                                    style={{
+                                                        cursor: slot.available ? 'pointer' : 'default',
+                                                        outline: isSelected ? '2px solid var(--primary)' : 'none',
+                                                        outlineOffset: '1px',
+                                                        borderRadius: '4px',
+                                                        fontWeight: isSelected ? 700 : undefined,
+                                                        transition: 'outline 0.15s, font-weight 0.15s',
+                                                    }}
+                                                >
+                                                    {slot.label}
+                                                </span>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ))}
@@ -437,6 +642,15 @@ const SpaceDetail: React.FC = () => {
 
                     <article className="detail-panel booking-panel">
                         <h2>Book This Workspace</h2>
+                        {selectedSlotKey && (
+                            <div style={{
+                                fontSize: '0.8rem', padding: '0.45rem 0.7rem', borderRadius: 'var(--radius)',
+                                background: '#ede9fe', color: '#6d28d9', fontWeight: 500, marginBottom: '0.5rem',
+                                border: '1px solid #ddd6fe',
+                            }}>
+                                ✓ Slot selected — adjust the times below if needed.
+                            </div>
+                        )}
                         {errorMsg && <div className="alert">{errorMsg}</div>}
 
                         <div className="form" style={{ marginTop: '12px' }}>

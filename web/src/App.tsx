@@ -9,6 +9,9 @@ import Checkout from './features/reservations/Checkout';
 import Reservations from './features/reservations/Reservations';
 import OAuth2RedirectHandler from './features/auth/OAuth2RedirectHandler';
 import AdminDashboard from './features/admin/AdminDashboard';
+import AdminWorkspaceManager from './features/admin/AdminWorkspaceManager';
+import AdminReservationManager from './features/admin/AdminReservationManager';
+import AdminAvailabilityManager from './features/admin/AdminAvailabilityManager';
 import { fetchCurrentUser } from './features/shared/axiosConfig';
 
 // Protect routes: Redirects to login if accessToken is missing
@@ -76,6 +79,15 @@ const App: React.FC = () => {
                 {/* Admin Routes */}
                 <Route path="/admin" element={
                     <AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>
+                } />
+                <Route path="/admin/workspaces" element={
+                    <AdminProtectedRoute><AdminWorkspaceManager /></AdminProtectedRoute>
+                } />
+                <Route path="/admin/reservations" element={
+                    <AdminProtectedRoute><AdminReservationManager /></AdminProtectedRoute>
+                } />
+                <Route path="/admin/availability" element={
+                    <AdminProtectedRoute><AdminAvailabilityManager /></AdminProtectedRoute>
                 } />
             </Routes>
         </Router>

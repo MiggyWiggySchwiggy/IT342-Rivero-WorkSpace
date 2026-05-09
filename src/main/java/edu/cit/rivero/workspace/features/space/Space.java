@@ -40,21 +40,19 @@ public class Space {
     @Column(name = "image_url")
     private String imageUrl;
 
-    public Space() {
-    }
+    @Column(columnDefinition = "TEXT")
+    private String amenities; // Comma-separated, e.g. "Ergonomic chair,Noise-controlled booth"
 
-    public Space(String id, String name, String location, String type, Integer capacity, Double hourlyRate,
-                 Double rating, Boolean available, String description, String imageUrl) {
-        this.id = id;
-        this.name = name;
-        this.location = location;
-        this.type = type;
-        this.capacity = capacity;
-        this.hourlyRate = hourlyRate;
-        this.rating = rating;
-        this.available = available;
-        this.description = description;
-        this.imageUrl = imageUrl;
+    @Column(columnDefinition = "TEXT")
+    private String utilities; // Comma-separated, e.g. "High-speed Wi-Fi,Power outlet"
+
+    @Column(name = "check_in_window")
+    private String checkInWindow; // e.g. "Anytime between 8:00 AM - 9:00 PM"
+
+    @Column(name = "cancellation_policy")
+    private String cancellationPolicy; // e.g. "Free cancellation up to 2 hours before check-in."
+
+    public Space() {
     }
 
     public String getId() { return id; }
@@ -86,4 +84,17 @@ public class Space {
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getAmenities() { return amenities; }
+    public void setAmenities(String amenities) { this.amenities = amenities; }
+
+    public String getUtilities() { return utilities; }
+    public void setUtilities(String utilities) { this.utilities = utilities; }
+
+    public String getCheckInWindow() { return checkInWindow; }
+    public void setCheckInWindow(String checkInWindow) { this.checkInWindow = checkInWindow; }
+
+    public String getCancellationPolicy() { return cancellationPolicy; }
+    public void setCancellationPolicy(String cancellationPolicy) { this.cancellationPolicy = cancellationPolicy; }
 }
+

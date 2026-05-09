@@ -3,13 +3,9 @@ package edu.cit.rivero.workspace.features.reservation;
 import edu.cit.rivero.workspace.common.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -37,5 +33,21 @@ public class ReservationController {
     public ResponseEntity<ApiResponse<List<ReservationHistoryItemData>>> getMyReservations(Authentication authentication) {
         List<ReservationHistoryItemData> response = reservationService.getMyReservations(authentication.getName());
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // ── Admin endpoints ──
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<List<AdminReservationItemData>>> getAllReservations() {
+        List<AdminReservationItemData> response = reservationService.getAllReservations();
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PatchMapping("/{id}/cancel")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> cancelReservation(@PathVariable Long id) {
+        reservationService.cancelReservation(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

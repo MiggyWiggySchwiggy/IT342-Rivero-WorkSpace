@@ -12,10 +12,19 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     List<Reservation> findByUserEmailOrderByCreatedAtDesc(String userEmail);
 
+    List<Reservation> findAllByOrderByCreatedAtDesc();
+
     boolean existsBySpaceIdAndStatusAndStartTimeLessThanAndEndTimeGreaterThan(
             String spaceId,
             String status,
             java.time.LocalDateTime requestedEnd,
             java.time.LocalDateTime requestedStart
+    );
+
+    List<Reservation> findBySpaceIdAndStatusAndStartTimeLessThanAndEndTimeGreaterThan(
+            String spaceId,
+            String status,
+            java.time.LocalDateTime rangeEnd,
+            java.time.LocalDateTime rangeStart
     );
 }

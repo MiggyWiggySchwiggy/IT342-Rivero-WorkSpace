@@ -12,9 +12,11 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <View
+        <ImageView
+            android:id="@+id/ivSpaceImage"
             android:layout_width="match_parent"
             android:layout_height="120dp"
+            android:scaleType="centerCrop"
             android:background="#E5E7EB" />
 
         <LinearLayout

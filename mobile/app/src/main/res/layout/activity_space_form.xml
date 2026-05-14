@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F1F5F9">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Title -->
+        <!-- Header with back button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <ImageButton
+                android:id="@+id/btnBackSpaceForm"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@android:drawable/ic_media_previous"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                android:layout_marginEnd="8dp"/>
+
+            <TextView
+                android:id="@+id/tvFormTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="New Workspace"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#111827"/>
+        </LinearLayout>
+
+        <!-- ── Basic Info Card ── -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BASIC INFO"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#6B7280"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:elevation="1dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Name *" android:textSize="13sp" android:textColor="#6B7280" android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/etSpaceName"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/edit_text_bg"
+                android:hint="e.g., The Creative Hub"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:layout_marginBottom="12dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Location *" android:textSize="13sp" android:textColor="#6B7280" android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/etSpaceLocation"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/edit_text_bg"
+                android:hint="e.g., Cebu IT Park, Cebu City"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:layout_marginBottom="12dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:weightSum="2">
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical" android:layout_marginEnd="8dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Type *" android:textSize="13sp" android:textColor="#6B7280" android:layout_marginBottom="4dp"/>
+                    <Spinner
+                        android:id="@+id/spinnerSpaceType"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:background="@drawable/edit_text_bg"
+                        android:layout_marginBottom="12dp"/>
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="8dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Capacity *" android:textSize="13sp" android:textColor="#6B7280" android:layout_marginBottom="4dp"/>
+                    <EditText
+                        android:id="@+id/etSpaceCapacity"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:background="@drawable/edit_text_bg"
+                        android:hint="e.g., 8"
+                        android:inputType="number"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:layout_marginBottom="12dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Hourly Rate (₱) *" android:textSize="13sp" android:textColor="#6B7280" android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/etSpaceRate"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/edit_text_bg"
+                android:hint="e.g., 500"
+                android:inputType="numberDecimal"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Available Switch -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Available for booking"
+                    android:textSize="15sp"
+                    android:textColor="#111827"/>
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchAvailable"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- ── Description Card ── -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="DESCRIPTION" android:textSize="11sp" android:textStyle="bold"
+            android:textColor="#6B7280" android:letterSpacing="0.1" android:layout_marginBottom="8dp"/>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#FFFFFF" android:padding="16dp"
+            android:elevation="1dp" android:layout_marginBottom="16dp">
+
+            <EditText
+                android:id="@+id/etSpaceDescription"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:background="@drawable/edit_text_bg"
+                android:hint="Describe the workspace…"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:gravity="top"
+                android:inputType="textMultiLine"/>
+        </LinearLayout>
+
+        <!-- ── Details Card ── -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="DETAILS &amp; POLICIES" android:textSize="11sp" android:textStyle="bold"
+            android:textColor="#6B7280" android:letterSpacing="0.1" android:layout_marginBottom="8dp"/>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#FFFFFF" android:padding="16dp"
+            android:elevation="1dp" android:layout_marginBottom="24dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Amenities (comma-separated)" android:textSize="13sp"
+                android:textColor="#6B7280" android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/etSpaceAmenities"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:background="@drawable/edit_text_bg"
+                android:hint="e.g., Wi-Fi, Whiteboard, Projector"
+                android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="10dp"
+                android:gravity="top" android:inputType="textMultiLine"
+                android:layout_marginBottom="12dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Utilities (comma-separated)" android:textSize="13sp"
+                android:textColor="#6B7280" android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/etSpaceUtilities"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:background="@drawable/edit_text_bg"
+                android:hint="e.g., Air conditioning, Power outlets"
+                android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="10dp"
+                android:gravity="top" android:inputType="textMultiLine"
+                android:layout_marginBottom="12dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Check-in Window" android:textSize="13sp"
+                android:textColor="#6B7280" android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/etCheckInWindow"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/edit_text_bg"
+                android:hint="e.g., 8:00 AM – 9:00 PM"
+                android:paddingStart="12dp" android:paddingEnd="12dp"
+                android:layout_marginBottom="12dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Cancellation Policy" android:textSize="13sp"
+                android:textColor="#6B7280" android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/etCancellationPolicy"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/edit_text_bg"
+                android:hint="e.g., Free cancellation 24 hrs before"
+                android:paddingStart="12dp" android:paddingEnd="12dp"/>
+        </LinearLayout>
+
+        <!-- Submit Button -->
+        <Button
+            android:id="@+id/btnSubmitSpace"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Create Workspace"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2563EB"/>
+
+        <ProgressBar
+            android:id="@+id/progressBarSpaceForm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:layout_marginTop="12dp"/>
+
+    </LinearLayout>
+</ScrollView>

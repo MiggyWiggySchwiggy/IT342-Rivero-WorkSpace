@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "edu.cit.rivero.workspace"
-        minSdk = 24
+        minSdk = 26  // Bumped to 26 for java.time APIs (LocalDateTime, OffsetDateTime)
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -36,23 +36,32 @@ android {
 }
 
 dependencies {
+    // AndroidX Core
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.core:core:1.13.1")
+    implementation("androidx.appcompat:appcompat:1.6.1")
 
+    // Material Components (includes MaterialDatePicker, MaterialTimePicker, Chips, etc.)
+    implementation("com.google.android.material:material:1.11.0")
+
+    // Layouts
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
+
+    // RecyclerView & ViewPager2
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.viewpager2:viewpager2:1.0.0")
+
+    // Networking
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // Image Loading
+    implementation("io.coil-kt:coil:2.6.0")
+
+    // Testing
     implementation(libs.androidx.junit.ktx)
-    dependencies {
-        // Force AndroidX Core to stay on API 34 compatible versions
-        implementation("androidx.core:core-ktx:1.13.1")
-        implementation("androidx.core:core:1.13.1")
-
-        // UI libraries (make sure these aren't pulling in newer stuff)
-        implementation("androidx.appcompat:appcompat:1.6.1")
-        implementation("com.google.android.material:material:1.11.0")
-        implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-
-        // Your Retrofit libraries you added earlier
-        implementation("com.squareup.retrofit2:retrofit:2.9.0")
-        implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-
-        // RecyclerView for your Dashboard
-        implementation("androidx.recyclerview:recyclerview:1.3.2")
-    }
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }

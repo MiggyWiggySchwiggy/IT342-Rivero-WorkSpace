@@ -8,6 +8,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import edu.cit.rivero.workspace.api.ApiClient
+import edu.cit.rivero.workspace.models.ApiResponse
 import edu.cit.rivero.workspace.models.AuthResponseData
 import edu.cit.rivero.workspace.models.RegisterRequest
 import retrofit2.Call
@@ -49,20 +50,20 @@ class RegisterActivity : AppCompatActivity() {
             }
 
             // Send data to Spring Boot Backend
-            ApiClient.instance.registerUser(request).enqueue(object : Callback<AuthResponseData> {
-                override fun onResponse(call: Call<AuthResponseData>, response: Response<AuthResponseData>) {
-                    if (response.isSuccessful) {
+            ApiClient.instance.registerUser(request).enqueue(object : Callback<ApiResponse<AuthResponseData>> {
+                override fun onResponse(call: Call<ApiResponse<AuthResponseData>>, response: Response<ApiResponse<AuthResponseData>>) {
+                    if (response.isSuccessful && response.body()?.success == true) {
                         Toast.makeText(this@RegisterActivity, "Registration Successful!", Toast.LENGTH_LONG).show()
 
                         // Redirect to Login Screen so they can sign in with their new account
                         startActivity(Intent(this@RegisterActivity, LoginActivity::class.java))
                         finish()
                     } else {
-                        Toast.makeText(this@RegisterActivity, "Registration Failed: Email might be taken", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@RegisterActivity, response.body()?.error?.message ?: "Registration Failed", Toast.LENGTH_SHORT).show()
                     }
                 }
 
-                override fun onFailure(call: Call<AuthResponseData>, t: Throwable) {
+                override fun onFailure(call: Call<ApiResponse<AuthResponseData>>, t: Throwable) {
                     Toast.makeText(this@RegisterActivity, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
                 }
             })

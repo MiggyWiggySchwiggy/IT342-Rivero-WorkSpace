@@ -3,39 +3,67 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center">
+    android:padding="32dp"
+    android:gravity="center"
+    android:background="#F3F4F6">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="WorkSpace"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:textColor="#111827"
+        android:layout_marginBottom="4dp"
+        android:textAlignment="center"/>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="WorkSpace Login"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="24dp"
-        android:textAlignment="center"/>
+        android:text="Sign in to your account"
+        android:textSize="16sp"
+        android:textColor="#6B7280"
+        android:textAlignment="center"
+        android:layout_marginBottom="40dp"/>
 
     <EditText
         android:id="@+id/etLoginEmail"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:hint="Email"
+        android:layout_height="55dp"
+        android:hint="Email address"
         android:inputType="textEmailAddress"
+        android:background="@drawable/edit_text_bg"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:layout_marginBottom="12dp"/>
 
     <EditText
         android:id="@+id/etLoginPassword"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="55dp"
         android:hint="Password"
         android:inputType="textPassword"
+        android:background="@drawable/edit_text_bg"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:layout_marginBottom="24dp"/>
 
     <Button
         android:id="@+id/btnLogin"
         android:layout_width="match_parent"
         android:layout_height="55dp"
-        android:text="Login" />
+        android:text="Sign In"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:backgroundTint="#2563EB"
+        android:textColor="#FFFFFF" />
+
+    <ProgressBar
+        android:id="@+id/progressBarLogin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_marginTop="16dp"/>
 
     <TextView
         android:id="@+id/tvGoToRegister"
@@ -45,5 +73,7 @@
         android:textAlignment="center"
         android:layout_marginTop="16dp"
         android:textColor="#2563EB"
-        android:clickable="true"/>
+        android:clickable="true"
+        android:focusable="true"/>
+
 </LinearLayout>

@@ -56,6 +56,7 @@ const Dashboard: React.FC = () => {
     const [workspaces, setWorkspaces] = useState<Space[]>([]);
     const [loading, setLoading] = useState(true);
     const [usingSampleData, setUsingSampleData] = useState(false);
+    const isAdmin = localStorage.getItem('userRole') === 'ROLE_ADMIN';
 
     useEffect(() => {
         const fetchSpaces = async () => {
@@ -114,6 +115,7 @@ const Dashboard: React.FC = () => {
                 <nav className="topbar-links">
                     <Link to="/dashboard" className="active">Dashboard</Link>
                     <Link to="/reservations">Reservations</Link>
+                    {isAdmin && <Link to="/admin" style={{ color: 'var(--primary)' }}>Admin</Link>}
                 </nav>
                 <button className="secondary-btn" onClick={handleLogout}>Log out</button>
             </header>
@@ -162,13 +164,22 @@ const Dashboard: React.FC = () => {
                 <section className="grid">
                     {filtered.map((ws) => (
                         <article className="ws-card" key={ws.id}>
-                            {ws.imageUrl && (
-                                <img
-                                    src={`http://localhost:8080${ws.imageUrl.split(',')[0].trim()}`}
-                                    alt={ws.name}
-                                    style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: 'var(--radius) var(--radius) 0 0' }}
-                                />
-                            )}
+                            {(() => {
+                                const rawUrl = ws.imageUrl || '';
+                                const parsedUrls = rawUrl.split(',').map(u => u.trim()).filter(Boolean);
+                                const firstUrl = parsedUrls.length > 0 
+                                    ? parsedUrls[0] 
+                                    : 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1400&q=80';
+                                const imgSrc = firstUrl.startsWith('http') ? firstUrl : `http://localhost:8080${firstUrl}`;
+
+                                return (
+                                    <img
+                                        src={imgSrc}
+                                        alt={ws.name}
+                                        style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: 'var(--radius) var(--radius) 0 0' }}
+                                    />
+                                );
+                            })()}
                             <div style={{ padding: '1.25rem' }}>
                                 <div className="ws-type">{ws.type}</div>
                                 <h3 className="ws-name">{ws.name}</h3>

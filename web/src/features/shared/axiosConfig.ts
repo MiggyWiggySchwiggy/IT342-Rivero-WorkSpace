@@ -88,3 +88,17 @@ export async function uploadSpaceImage(spaceId: string, files: FileList) {
     });
     return response.data.data;
 }
+
+// ── Weather API ──
+
+export async function fetchSpaceWeather(spaceId: string) {
+    const response = await api.get(`/spaces/${spaceId}/weather`);
+    return response.data.data;
+}
+
+// ── Geocoding API ──
+
+export async function fetchSpaceCoordinates(spaceId: string) {
+    const response = await api.get(`/spaces/${spaceId}/coordinates`);
+    return response.data.data;
+}

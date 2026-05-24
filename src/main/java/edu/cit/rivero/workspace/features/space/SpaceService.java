@@ -112,5 +112,61 @@ public class SpaceService {
             throw new RuntimeException("Failed to store files", e);
         }
     }
+
+    public WeatherDto getWeatherForSpace(String spaceId) {
+        String url = "https://api.open-meteo.com/v1/forecast?latitude=10.3157&longitude=123.8854&current_weather=true";
+        org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+        try {
+            java.util.Map<String, Object> response = restTemplate.getForObject(url, java.util.Map.class);
+            if (response != null && response.containsKey("current_weather")) {
+                java.util.Map<String, Object> currentWeather = (java.util.Map<String, Object>) response.get("current_weather");
+                WeatherDto dto = new WeatherDto();
+                if (currentWeather.get("temperature") instanceof Number) {
+                    dto.setTemperature(((Number) currentWeather.get("temperature")).doubleValue());
+                }
+                if (currentWeather.get("weathercode") instanceof Number) {
+                    dto.setWeatherCode(((Number) currentWeather.get("weathercode")).intValue());
+                }
+                return dto;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new WeatherDto();
+    }
+
+    public CoordinatesDto getCoordinatesForSpace(String spaceId) {
+        Space space = spaceRepository.findById(spaceId)
+                .orElseThrow(() -> new RuntimeException("Workspace not found with id: " + spaceId));
+        
+        String location = space.getLocation();
+        if (location == null || location.isBlank()) {
+            return new CoordinatesDto(10.3157, 123.8854); // Cebu fallback
+        }
+
+        try {
+            String encodedLocation = java.net.URLEncoder.encode(location, "UTF-8");
+            String url = "https://nominatim.openstreetmap.org/search?q=" + encodedLocation + "&format=json&limit=1";
+            
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("User-Agent", "WorkSpaceApp/1.0");
+            org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(headers);
+            
+            org.springframework.http.ResponseEntity<java.util.List> response = restTemplate.exchange(
+                    url, org.springframework.http.HttpMethod.GET, entity, java.util.List.class);
+            
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null && !response.getBody().isEmpty()) {
+                java.util.Map<String, Object> firstResult = (java.util.Map<String, Object>) response.getBody().get(0);
+                Double lat = Double.parseDouble(firstResult.get("lat").toString());
+                Double lon = Double.parseDouble(firstResult.get("lon").toString());
+                return new CoordinatesDto(lat, lon);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return new CoordinatesDto(10.3157, 123.8854); // Cebu fallback
+    }
 }
 

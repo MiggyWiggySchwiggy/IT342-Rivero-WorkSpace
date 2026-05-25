@@ -1,6 +1,7 @@
 package edu.cit.rivero.workspace.security;
 
 import edu.cit.rivero.workspace.features.auth.*;
+import edu.cit.rivero.workspace.common.EmailService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,18 +34,21 @@ public class SecurityConfig {
     // 1. Added RoleRepository so we can fetch the USER entity
     private final RoleRepository roleRepository;
     private final String frontendOAuthRedirectUri;
+    private final EmailService emailService;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter,
                           AuthenticationProvider authenticationProvider,
                           JwtService jwtService,
                           UserRepository userRepository,
                           RoleRepository roleRepository,
+                          EmailService emailService,
                           @Value("${app.oauth2.frontend-redirect-uri:http://localhost:5173/oauth2/redirect}") String frontendOAuthRedirectUri) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.authenticationProvider = authenticationProvider;
         this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.emailService = emailService;
         this.frontendOAuthRedirectUri = frontendOAuthRedirectUri;
     }
 
@@ -91,6 +95,9 @@ public class SecurityConfig {
 
                                 return userRepository.save(newUser);
                             });
+
+                            // Send security alert for OAuth login as well
+                            emailService.sendLoginAlertEmail(user.getEmail(), user.getFirstName());
 
                             String token = jwtService.generateToken(user);
                             response.sendRedirect(frontendOAuthRedirectUri + "?token=" + token);

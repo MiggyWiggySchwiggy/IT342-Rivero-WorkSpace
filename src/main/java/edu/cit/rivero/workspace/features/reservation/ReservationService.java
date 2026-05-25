@@ -25,16 +25,19 @@ public class ReservationService {
 
     // 1. Strategy is properly declared
     private final PaymentStrategy paymentStrategy;
+    private final EmailService emailService;
 
     // 2. Strategy is added to the constructor for Spring Injection
     public ReservationService(ReservationRepository reservationRepository,
                               SpaceRepository spaceRepository,
                               UserRepository userRepository,
-                              PaymentStrategy paymentStrategy) {
+                              PaymentStrategy paymentStrategy,
+                              EmailService emailService) {
         this.reservationRepository = reservationRepository;
         this.spaceRepository = spaceRepository;
         this.userRepository = userRepository;
         this.paymentStrategy = paymentStrategy;
+        this.emailService = emailService;
     }
 
     public ReservationResponseData checkout(ReservationCheckoutRequest request, String userEmail) {
@@ -101,6 +104,15 @@ public class ReservationService {
         reservation.setCardLast4(normalizedCard.length() >= 4 ? normalizedCard.substring(normalizedCard.length() - 4) : "****");
 
         Reservation savedReservation = reservationRepository.save(reservation);
+
+        // Send booking confirmation email
+        emailService.sendBookingConfirmation(
+                user.getEmail(),
+                user.getFirstName(),
+                space.getName(),
+                savedReservation.getStartTime().toLocalDate().toString(),
+                savedReservation.getStartTime().toLocalTime().toString()
+        );
 
         return new ReservationResponseData(
                 savedReservation.getId(),

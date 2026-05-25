@@ -1,6 +1,7 @@
 package edu.cit.rivero.workspace.features.auth;
 
 import edu.cit.rivero.workspace.security.*;
+import edu.cit.rivero.workspace.common.EmailService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,16 +18,18 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
 
     // Explicit constructor injection (No Lombok needed)
     public AuthService(UserRepository userRepository, RoleRepository roleRepository,
                        PasswordEncoder passwordEncoder, JwtService jwtService,
-                       AuthenticationManager authenticationManager) {
+                       AuthenticationManager authenticationManager, EmailService emailService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.emailService = emailService;
     }
 
     public AuthResponseData register(RegisterRequest request) {
@@ -51,6 +54,9 @@ public class AuthService {
         // 4. Save to database
         userRepository.save(user);
 
+        // Send welcome email (asynchronously or fire-and-forget in real app, here sync is fine for demo)
+        emailService.sendWelcomeEmail(user.getEmail(), user.getFirstName());
+
         // 5. Generate tokens and prepare response
         return generateAuthResponse(user);
     }
@@ -64,6 +70,9 @@ public class AuthService {
         // 2. Fetch the user
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Send a security alert email upon successful login
+        emailService.sendLoginAlertEmail(user.getEmail(), user.getFirstName());
 
         // 3. Generate tokens and prepare response
         return generateAuthResponse(user);

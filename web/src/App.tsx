@@ -89,6 +89,9 @@ const App: React.FC = () => {
                 <Route path="/admin/availability" element={
                     <AdminProtectedRoute><AdminAvailabilityManager /></AdminProtectedRoute>
                 } />
+
+                {/* Catch-all Route */}
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
         </Router>
     );

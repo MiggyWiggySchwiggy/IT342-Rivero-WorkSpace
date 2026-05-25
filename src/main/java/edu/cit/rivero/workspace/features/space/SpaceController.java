@@ -132,5 +132,17 @@ public class SpaceController {
         Space updated = spaceService.uploadImage(id, files);
         return ResponseEntity.ok(ApiResponse.success(updated));
     }
+
+    @GetMapping("/{id}/weather")
+    public ResponseEntity<ApiResponse<WeatherDto>> getWeather(@PathVariable String id) {
+        WeatherDto weather = spaceService.getWeatherForSpace(id);
+        return ResponseEntity.ok(ApiResponse.success(weather));
+    }
+
+    @GetMapping("/{id}/coordinates")
+    public ResponseEntity<ApiResponse<CoordinatesDto>> getCoordinates(@PathVariable String id) {
+        CoordinatesDto coords = spaceService.getCoordinatesForSpace(id);
+        return ResponseEntity.ok(ApiResponse.success(coords));
+    }
 }
 

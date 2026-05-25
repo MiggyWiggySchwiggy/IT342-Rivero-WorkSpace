@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import api, { fetchAvailability, fetchSpaceBookings } from '../shared/axiosConfig';
+import api, { fetchAvailability, fetchSpaceBookings, fetchSpaceWeather, fetchSpaceCoordinates } from '../shared/axiosConfig';
 import type { Space } from '../spaces/types';
 
 type Review = {
@@ -354,6 +354,8 @@ const SpaceDetail: React.FC = () => {
 
     const [space, setSpace] = useState<Space | null>(preloadedSpace);
     const [loading, setLoading] = useState<boolean>(!preloadedSpace);
+    const [weather, setWeather] = useState<{ temperature: number } | null>(null);
+    const [coordinates, setCoordinates] = useState<{ lat: number, lon: number } | null>(null);
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
@@ -410,6 +412,26 @@ const SpaceDetail: React.FC = () => {
 
     useEffect(() => {
         setActivePhotoIndex(0);
+    }, [space?.id]);
+
+    // Fetch weather whenever space is loaded
+    useEffect(() => {
+        if (!space?.id) return;
+        fetchSpaceWeather(space.id)
+            .then(data => {
+                if (data) setWeather(data);
+            })
+            .catch(() => setWeather(null));
+    }, [space?.id]);
+
+    // Fetch coordinates whenever space is loaded
+    useEffect(() => {
+        if (!space?.id) return;
+        fetchSpaceCoordinates(space.id)
+            .then(data => {
+                if (data) setCoordinates(data);
+            })
+            .catch(() => setCoordinates(null));
     }, [space?.id]);
 
     // Fetch real availability from API + bookings, then merge
@@ -533,7 +555,10 @@ const SpaceDetail: React.FC = () => {
                     <div className="detail-overlay">
                         <div className="ws-type">{space.type}</div>
                         <h1 className="detail-title">{space.name}</h1>
-                        <p className="detail-subtitle">{space.location} | {space.capacity} people | PHP {space.hourlyRate}/hr</p>
+                        <p className="detail-subtitle">
+                            {space.location} | {space.capacity} people | PHP {space.hourlyRate}/hr
+                            {weather && <span style={{ marginLeft: '12px', fontWeight: 600 }}>🌤 Current Weather: {weather.temperature}°C</span>}
+                        </p>
                     </div>
                 </section>
 
@@ -590,6 +615,19 @@ const SpaceDetail: React.FC = () => {
                             ))}
                         </ul>
                     </article>
+
+                    {coordinates && (
+                        <article className="detail-panel">
+                            <h2>Location Map</h2>
+                            <iframe 
+                                width="100%" 
+                                height="300" 
+                                style={{ border: '1px solid #e5e7eb', borderRadius: '8px', marginTop: '0.8rem' }}
+                                src={`https://www.openstreetmap.org/export/embed.html?bbox=${coordinates.lon - 0.01},${coordinates.lat - 0.01},${coordinates.lon + 0.01},${coordinates.lat + 0.01}&layer=mapnik&marker=${coordinates.lat},${coordinates.lon}`}
+                                title="Location Map"
+                            ></iframe>
+                        </article>
+                    )}
 
                     <article className="detail-panel">
                         <h2>Availability Preview (Next 7 Days)</h2>

@@ -33,7 +33,7 @@ build/
 .vscode/
 
 # Local Spring secrets override
-src/main/resources/application-local.properties
+**/application-local.properties
 
 # Uploaded files
 uploads/

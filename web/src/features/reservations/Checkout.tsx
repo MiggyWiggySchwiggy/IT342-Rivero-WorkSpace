@@ -2,6 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import api from '../shared/axiosConfig';
 import type { ReservationPayload } from '../reservations/types';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
+// Load Stripe outside of components' render to avoid recreating Stripe object on every render.
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
 type CheckoutState = {
     spaceId?: string;
@@ -26,14 +31,12 @@ const formatDateTime = (value?: string): string => {
     });
 };
 
-const formatCardNumber = (value: string): string => {
-    const digits = value.replace(/\D/g, '').slice(0, 16);
-    return digits.replace(/(.{4})/g, '$1 ').trim();
-};
-
-const Checkout: React.FC = () => {
+const CheckoutContent: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const stripe = useStripe();
+    const elements = useElements();
+    
     const checkoutState = (location.state || {}) as CheckoutState;
     const { spaceId, spaceName, location: spaceLocation, type, hourlyRate, startTime, endTime } = checkoutState;
     const [meta, setMeta] = useState({
@@ -43,7 +46,6 @@ const Checkout: React.FC = () => {
         hourlyRate: typeof hourlyRate === 'number' ? hourlyRate : 0,
     });
 
-    const [cardData, setCardData] = useState({ cardNumber: '4242 4242 4242 4242', expiry: '12/26', cvv: '123' });
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
@@ -96,32 +98,56 @@ const Checkout: React.FC = () => {
 
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (!stripe || !elements) {
+            setErrorMsg('Stripe has not loaded yet. Make sure your Publishable Key is valid.');
+            return;
+        }
+
+        const cardElement = elements.getElement(CardElement);
+        if (!cardElement) {
+            setErrorMsg('Card element not found.');
+            return;
+        }
+
         setLoading(true);
         setErrorMsg('');
 
-        const payload: ReservationPayload = {
-            spaceId,
-            startTime,
-            endTime,
-            paymentMethod: {
-                cardNumber: cardData.cardNumber.replace(/\s/g, ''),
-                expiryDate: cardData.expiry,
-                cvv: cardData.cvv
-            }
-        };
-
         try {
+            // 1. Create PaymentMethod using Stripe.js
+            const { error, paymentMethod } = await stripe.createPaymentMethod({
+                type: 'card',
+                card: cardElement,
+            });
+
+            if (error) {
+                setErrorMsg(error.message || 'Failed to process card.');
+                setLoading(false);
+                return;
+            }
+
+            // 2. Send the PaymentMethod ID (pm_...) to our Spring Boot backend
+            const payload: ReservationPayload = {
+                spaceId,
+                startTime,
+                endTime,
+                paymentMethod: {
+                    cardNumber: paymentMethod.id, // Backend SandboxStripeStrategy handles pm_... strings
+                    expiryDate: '12/99',          // Dummy data to pass DTO validation
+                    cvv: '123'                    // Dummy data to pass DTO validation
+                }
+            };
+
             await api.post('/reservations/checkout', payload);
             setSuccessMsg('Reservation confirmed successfully! Redirecting to reservation history...');
             setTimeout(() => navigate('/reservations'), 1200);
+            
         } catch (error: any) {
             if (error.response && error.response.data) {
                 const errorCode = error.response.data.error?.code || error.response.data.errorCode;
                 const errorMessage = error.response.data.error?.message || error.response.data.message;
                 if (errorCode === 'BOOK-001') {
                     setErrorMsg('Schedule Conflict: This space was just booked for this time slot.');
-                } else if (errorCode === 'PAY-001') {
-                    setErrorMsg('Payment Declined: Please verify your Sandbox card details.');
                 } else {
                     setErrorMsg(errorMessage || 'Checkout failed.');
                 }
@@ -131,6 +157,24 @@ const Checkout: React.FC = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const cardElementOptions = {
+        style: {
+            base: {
+                fontSize: '16px',
+                color: '#32325d',
+                fontFamily: '"Inter", sans-serif',
+                '::placeholder': {
+                    color: '#aab7c4',
+                },
+                padding: '10px',
+            },
+            invalid: {
+                color: '#fa755a',
+                iconColor: '#fa755a',
+            },
+        },
     };
 
     return (
@@ -158,46 +202,11 @@ const Checkout: React.FC = () => {
                         </div>
 
                         <form onSubmit={handleCheckout} className="form" style={{ marginTop: '12px' }}>
-                            <div className="field">
-                                <label htmlFor="card-number">Card Number (Test Mode)</label>
-                                <input
-                                    id="card-number"
-                                    type="text"
-                                    required
-                                    value={cardData.cardNumber}
-                                    onChange={(e) => setCardData({ ...cardData, cardNumber: formatCardNumber(e.target.value) })}
-                                    placeholder="4242 4242 4242 4242"
-                                />
+                            <div className="field" style={{ padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
+                                <CardElement options={cardElementOptions} />
                             </div>
 
-                            <div className="row">
-                                <div className="field" style={{ flex: 1 }}>
-                                    <label htmlFor="expiry">Expiry (MM/YY)</label>
-                                    <input
-                                        id="expiry"
-                                        type="text"
-                                        required
-                                        maxLength={5}
-                                        value={cardData.expiry}
-                                        onChange={(e) => setCardData({ ...cardData, expiry: e.target.value.replace(/[^0-9/]/g, '').slice(0, 5) })}
-                                        placeholder="12/26"
-                                    />
-                                </div>
-                                <div className="field" style={{ flex: 1 }}>
-                                    <label htmlFor="cvv">CVV</label>
-                                    <input
-                                        id="cvv"
-                                        type="password"
-                                        required
-                                        maxLength={3}
-                                        value={cardData.cvv}
-                                        onChange={(e) => setCardData({ ...cardData, cvv: e.target.value.replace(/\D/g, '').slice(0, 3) })}
-                                        placeholder="123"
-                                    />
-                                </div>
-                            </div>
-
-                            <button className="primary-btn checkout-submit" type="submit" disabled={loading}>
+                            <button className="primary-btn checkout-submit" type="submit" disabled={loading || !stripe}>
                                 {loading ? 'Processing Transaction...' : `Pay PHP ${total.toFixed(2)} & Reserve`}
                             </button>
                         </form>
@@ -245,6 +254,14 @@ const Checkout: React.FC = () => {
                 </section>
             </main>
         </>
+    );
+};
+
+const Checkout: React.FC = () => {
+    return (
+        <Elements stripe={stripePromise}>
+            <CheckoutContent />
+        </Elements>
     );
 };
 

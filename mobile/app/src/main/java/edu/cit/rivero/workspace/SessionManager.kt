@@ -63,7 +63,10 @@ object SessionManager {
 
     fun isLoggedIn(context: Context): Boolean = getToken(context) != null
 
-    fun isAdmin(context: Context): Boolean = getRole(context) == "ADMIN"
+    fun isAdmin(context: Context): Boolean {
+        val r = getRole(context)?.uppercase() ?: ""
+        return r == "ADMIN" || r == "ROLE_ADMIN"
+    }
 
     fun clearSession(context: Context) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

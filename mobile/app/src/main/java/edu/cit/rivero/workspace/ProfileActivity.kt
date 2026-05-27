@@ -2,6 +2,7 @@ package edu.cit.rivero.workspace
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -25,12 +26,17 @@ class ProfileActivity : AppCompatActivity() {
         val btnMyReservations = findViewById<TextView>(R.id.btnMyReservations)
         val btnLogout = findViewById<TextView>(R.id.btnLogout)
 
+        val btnAdminDashboard = findViewById<TextView>(R.id.btnAdminDashboard)
+        val btnCustomerDashboard = findViewById<TextView>(R.id.btnCustomerDashboard)
+        val dividerAdmin = findViewById<View>(R.id.dividerAdmin)
+        val dividerCustomer = findViewById<View>(R.id.dividerCustomer)
 
         // Load session data from SessionManager
         val firstName = SessionManager.getFirstName(this)
         val lastName = SessionManager.getLastName(this)
         val email = SessionManager.getEmail(this)
         val role = SessionManager.getRole(this) ?: "USER"
+        val isAdminUser = SessionManager.isAdmin(this)
 
         val fullName = "$firstName $lastName".trim().ifEmpty { "Unknown User" }
         val initials = buildInitials(firstName, lastName)
@@ -39,7 +45,33 @@ class ProfileActivity : AppCompatActivity() {
         tvProfileName.text = fullName
         tvProfileEmail.text = email
         tvProfileRole.text = role
-        tvProfileRoleDetail.text = if (role == "ADMIN") "Administrator" else "Standard User"
+        tvProfileRoleDetail.text = if (isAdminUser) "Administrator" else "Standard User"
+
+        if (isAdminUser) {
+            btnAdminDashboard?.visibility = View.VISIBLE
+            dividerAdmin?.visibility = View.VISIBLE
+            btnCustomerDashboard?.visibility = View.VISIBLE
+            dividerCustomer?.visibility = View.VISIBLE
+
+            btnAdminDashboard?.setOnClickListener {
+                val intent = Intent(this, AdminDashboardActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                startActivity(intent)
+                finish()
+            }
+
+            btnCustomerDashboard?.setOnClickListener {
+                val intent = Intent(this, DashboardActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                startActivity(intent)
+                finish()
+            }
+        } else {
+            btnAdminDashboard?.visibility = View.GONE
+            dividerAdmin?.visibility = View.GONE
+            btnCustomerDashboard?.visibility = View.GONE
+            dividerCustomer?.visibility = View.GONE
+        }
 
         btnMyReservations.setOnClickListener {
             startActivity(Intent(this, ReservationListActivity::class.java))
@@ -52,7 +84,7 @@ class ProfileActivity : AppCompatActivity() {
                 .setPositiveButton("Logout") { _, _ ->
                     SessionManager.clearSession(this)
                     ApiClient.init(null) // Clear token from client
-                    val intent = Intent(this, LoginActivity::class.java)
+                    val intent = Intent(this, WelcomeActivity::class.java)
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     startActivity(intent)
                     finish()

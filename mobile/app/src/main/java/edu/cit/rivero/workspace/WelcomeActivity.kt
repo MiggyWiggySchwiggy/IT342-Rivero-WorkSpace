@@ -121,7 +121,7 @@ class WelcomeActivity : AppCompatActivity() {
 
     private fun navigateBasedOnRole(role: String?) {
         val destination = when (role?.uppercase()) {
-            "ADMIN" -> AdminDashboardActivity::class.java
+            "ADMIN", "ROLE_ADMIN" -> AdminDashboardActivity::class.java
             else -> DashboardActivity::class.java
         }
         startActivity(Intent(this, destination))

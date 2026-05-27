@@ -159,7 +159,7 @@ const AdminDashboard: React.FC = () => {
                     {loading
                         ? Array(4).fill(0).map((_, i) => (
                             <div key={i} style={{
-                                border: '1px solid #e5e7eb', borderRadius: '14px', background: '#fff',
+                                border: '1px solid #e5e7eb', borderRadius: '14px',
                                 padding: '1.25rem', height: '110px',
                                 background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
                                 backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite',

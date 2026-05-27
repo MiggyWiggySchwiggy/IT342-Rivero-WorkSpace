@@ -28,12 +28,14 @@ public class EmailService {
                 "Best regards,\n" +
                 "The WorkSpace Team");
         
-        try {
-            mailSender.send(message);
-            System.out.println("Welcome email sent to: " + toEmail);
-        } catch (Exception e) {
-            System.err.println("Failed to send welcome email to " + toEmail + ": " + e.getMessage());
-        }
+        new Thread(() -> {
+            try {
+                mailSender.send(message);
+                System.out.println("Welcome email sent to: " + toEmail);
+            } catch (Exception e) {
+                System.err.println("Failed to send welcome email to " + toEmail + ": " + e.getMessage());
+            }
+        }).start();
     }
 
     public void sendLoginAlertEmail(String toEmail, String firstName) {
@@ -47,12 +49,14 @@ public class EmailService {
                 "Best regards,\n" +
                 "The WorkSpace Team");
         
-        try {
-            mailSender.send(message);
-            System.out.println("Login alert email sent to: " + toEmail);
-        } catch (Exception e) {
-            System.err.println("Failed to send login alert to " + toEmail + ": " + e.getMessage());
-        }
+        new Thread(() -> {
+            try {
+                mailSender.send(message);
+                System.out.println("Login alert email sent to: " + toEmail);
+            } catch (Exception e) {
+                System.err.println("Failed to send login alert to " + toEmail + ": " + e.getMessage());
+            }
+        }).start();
     }
 
     public void sendBookingConfirmation(String toEmail, String firstName, String spaceName, String date, String time) {
@@ -70,11 +74,13 @@ public class EmailService {
                 "Best regards,\n" +
                 "The WorkSpace Team");
         
-        try {
-            mailSender.send(message);
-            System.out.println("Booking confirmation email sent to: " + toEmail);
-        } catch (Exception e) {
-            System.err.println("Failed to send booking confirmation to " + toEmail + ": " + e.getMessage());
-        }
+        new Thread(() -> {
+            try {
+                mailSender.send(message);
+                System.out.println("Booking confirmation email sent to: " + toEmail);
+            } catch (Exception e) {
+                System.err.println("Failed to send booking confirmation to " + toEmail + ": " + e.getMessage());
+            }
+        }).start();
     }
 }

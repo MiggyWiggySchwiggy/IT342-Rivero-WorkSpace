@@ -60,9 +60,12 @@ const AdminDashboard: React.FC = () => {
     };
 
     // ── KPI Computations ──
+    // Force-parse totalAmount to a real number (backend may return it as a string)
+    const toNum = (val: any): number => parseFloat(String(val ?? 0)) || 0;
+
     const totalBookings = reservations.length;
     const activeBookings = reservations.filter(r => r.status === 'CONFIRMED').length;
-    const totalRevenue = reservations.reduce((sum, r) => sum + (r.totalAmount ?? 0), 0);
+    const totalRevenue = reservations.reduce((sum, r) => sum + toNum(r.totalAmount), 0);
     const totalSpaces = spaces.length;
 
     // Bookings this week
@@ -76,7 +79,7 @@ const AdminDashboard: React.FC = () => {
         const name = r.space?.name ?? r.spaceName ?? 'Unknown';
         if (!spaceMap[name]) spaceMap[name] = { name, count: 0, revenue: 0 };
         spaceMap[name].count += 1;
-        spaceMap[name].revenue += r.totalAmount ?? 0;
+        spaceMap[name].revenue += toNum(r.totalAmount);
     });
     const topSpaces = Object.values(spaceMap).sort((a, b) => b.count - a.count).slice(0, 5);
     const maxBookings = topSpaces[0]?.count ?? 1;
@@ -150,7 +153,7 @@ const AdminDashboard: React.FC = () => {
 
                 {/* ── KPI Cards ── */}
                 <div style={{
-                    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                    display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
                     gap: '0.85rem', marginBottom: '1.75rem',
                 }}>
                     {loading
@@ -180,10 +183,10 @@ const AdminDashboard: React.FC = () => {
                                     }}>{k.label}</span>
                                     <span style={{ fontSize: '1.4rem' }}>{k.icon}</span>
                                 </div>
-                                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: k.color, letterSpacing: '-0.03em' }}>
+                                <div style={{ fontSize: 'clamp(1.1rem, 2vw, 1.6rem)', fontWeight: 800, color: k.color, letterSpacing: '-0.03em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {k.value}
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.3rem' }}>{k.delta}</div>
+                                <div style={{ fontSize: '0.73rem', color: '#9ca3af', marginTop: '0.3rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.delta}</div>
                             </div>
                         ))
                     }

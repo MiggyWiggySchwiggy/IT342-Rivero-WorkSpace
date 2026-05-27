@@ -72,12 +72,12 @@ spring.datasource.password=your_mysql_password
 All settings below override the defaults in `application.properties`:
 
 ```properties
-# Database
-spring.datasource.username=root
-spring.datasource.password=
+# Database (defaults to root with no password)
+spring.datasource.username=your_mysql_username
+spring.datasource.password=your_mysql_password
 
-# JWT signing key (Base64, min 32 bytes)
-application.security.jwt.secret-key=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+# JWT signing key — generate any Base64 string of at least 32 bytes
+application.security.jwt.secret-key=YOUR_OWN_BASE64_JWT_SECRET
 
 # Google OAuth2 (required for Google Sign-In feature)
 spring.security.oauth2.client.registration.google.client-id=YOUR_GOOGLE_CLIENT_ID
@@ -87,7 +87,7 @@ spring.security.oauth2.client.registration.google.client-secret=YOUR_GOOGLE_CLIE
 spring.mail.username=your_email@gmail.com
 spring.mail.password=your_gmail_app_password
 
-# Stripe (required for payments — use a test key)
+# Stripe (required for payments — use a Stripe test key)
 stripe.api.key=sk_test_your_stripe_test_key
 ```
 

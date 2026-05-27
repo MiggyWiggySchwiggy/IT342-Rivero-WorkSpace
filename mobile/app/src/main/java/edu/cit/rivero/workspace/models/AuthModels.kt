@@ -37,3 +37,7 @@ data class UserDto(
     val lastname: String,
     val role: String
 )
+
+data class GoogleLoginRequest(
+    val idToken: String
+)

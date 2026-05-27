@@ -38,6 +38,7 @@
         <activity android:name=".AdminDashboardActivity" />
         <activity android:name=".SpaceFormActivity" />
         <activity android:name=".ImageUploadActivity" />
+        <activity android:name=".AdminAvailabilityActivity" />
 
     </application>
 

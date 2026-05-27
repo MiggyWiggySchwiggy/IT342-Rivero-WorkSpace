@@ -56,7 +56,9 @@ class ReservationListActivity : AppCompatActivity() {
                         if (reservations.isEmpty()) {
                             tvEmpty.visibility = View.VISIBLE
                         } else {
-                            rvReservations.adapter = ReservationAdapter(reservations)
+                            rvReservations.adapter = ReservationAdapter(reservations) { item ->
+                                confirmCancelReservation(item)
+                            }
                         }
                     } else {
                         tvEmpty.visibility = View.VISIBLE
@@ -79,10 +81,43 @@ class ReservationListActivity : AppCompatActivity() {
             })
     }
 
+    private fun confirmCancelReservation(item: ReservationResponseData) {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Cancel Reservation")
+            .setMessage("Are you sure you want to cancel your reservation for ${item.spaceName ?: "Space #" + item.spaceId}?")
+            .setPositiveButton("Yes, Cancel") { _, _ ->
+                cancelReservation(item.reservationId)
+            }
+            .setNegativeButton("No", null)
+            .show()
+    }
+
+    private fun cancelReservation(reservationId: Long) {
+        progressBar.visibility = View.VISIBLE
+        ApiClient.instance.cancelReservation(reservationId)
+            .enqueue(object : Callback<ApiResponse<Void>> {
+                override fun onResponse(call: Call<ApiResponse<Void>>, response: Response<ApiResponse<Void>>) {
+                    progressBar.visibility = View.GONE
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        Toast.makeText(this@ReservationListActivity, "Reservation cancelled successfully", Toast.LENGTH_SHORT).show()
+                        fetchReservations()
+                    } else {
+                        Toast.makeText(this@ReservationListActivity, "Failed to cancel reservation", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<ApiResponse<Void>>, t: Throwable) {
+                    progressBar.visibility = View.GONE
+                    Toast.makeText(this@ReservationListActivity, "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
+    }
+
     // ── Adapter ──
 
     class ReservationAdapter(
-        private val items: List<ReservationResponseData>
+        private val items: List<ReservationResponseData>,
+        private val onCancelClick: (ReservationResponseData) -> Unit
     ) : RecyclerView.Adapter<ReservationAdapter.ViewHolder>() {
 
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -90,6 +125,7 @@ class ReservationListActivity : AppCompatActivity() {
             val tvSpaceId: TextView = view.findViewById(R.id.tvReservationSpaceId)
             val tvTime: TextView = view.findViewById(R.id.tvReservationTime)
             val tvAmount: TextView = view.findViewById(R.id.tvReservationAmount)
+            val btnCancel: android.widget.Button = view.findViewById(R.id.btnCancelReservation)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -113,6 +149,16 @@ class ReservationListActivity : AppCompatActivity() {
                 else -> 0xFF6B7280.toInt()
             }
             holder.tvStatus.setTextColor(statusColor)
+
+            // Cancel button visibility
+            if (item.status.uppercase() == "CONFIRMED" || item.status.uppercase() == "UPCOMING") {
+                holder.btnCancel.visibility = View.VISIBLE
+                holder.btnCancel.setOnClickListener {
+                    onCancelClick(item)
+                }
+            } else {
+                holder.btnCancel.visibility = View.GONE
+            }
         }
 
         override fun getItemCount() = items.size

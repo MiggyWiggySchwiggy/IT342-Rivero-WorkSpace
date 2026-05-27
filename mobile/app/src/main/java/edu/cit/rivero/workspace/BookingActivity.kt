@@ -29,6 +29,11 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import com.stripe.android.PaymentConfiguration
+import com.stripe.android.Stripe
+import com.stripe.android.ApiResultCallback
+import com.stripe.android.model.PaymentMethod
+import com.stripe.android.view.CardInputWidget
 
 class BookingActivity : AppCompatActivity() {
 
@@ -45,9 +50,7 @@ class BookingActivity : AppCompatActivity() {
     private lateinit var btnSelectStartTime: Button
     private lateinit var btnSelectEndTime: Button
     private lateinit var tvPriceSummary: TextView
-    private lateinit var etCardNumber: EditText
-    private lateinit var etExpiry: EditText
-    private lateinit var etCvv: EditText
+    private lateinit var cardInputWidget: CardInputWidget
     private lateinit var btnConfirmBooking: Button
     private lateinit var progressBar: ProgressBar
 
@@ -68,15 +71,19 @@ class BookingActivity : AppCompatActivity() {
         val spaceName = intent.getStringExtra(EXTRA_SPACE_NAME) ?: "Workspace"
         hourlyRate = intent.getDoubleExtra(EXTRA_HOURLY_RATE, 0.0)
 
+        // Initialize Stripe SDK Configuration
+        PaymentConfiguration.init(
+            applicationContext,
+            getString(R.string.stripe_publishable_key)
+        )
+
         // Views
         tvSpaceName = findViewById(R.id.tvBookingSpaceName)
         tvSelectedSlot = findViewById(R.id.tvSelectedSlot)
         btnSelectStartTime = findViewById(R.id.btnSelectStartTime)
         btnSelectEndTime = findViewById(R.id.btnSelectEndTime)
         tvPriceSummary = findViewById(R.id.tvPriceSummary)
-        etCardNumber = findViewById(R.id.etCardNumber)
-        etExpiry = findViewById(R.id.etExpiry)
-        etCvv = findViewById(R.id.etCvv)
+        cardInputWidget = findViewById(R.id.cardInputWidget)
         btnConfirmBooking = findViewById(R.id.btnConfirmBooking)
         progressBar = findViewById(R.id.progressBarBooking)
 
@@ -197,24 +204,50 @@ class BookingActivity : AppCompatActivity() {
             Toast.makeText(this, "Please select start and end times", Toast.LENGTH_SHORT).show()
             return
         }
-        val cardNumber = etCardNumber.text.toString().trim()
-        val expiry = etExpiry.text.toString().trim()
-        val cvv = etCvv.text.toString().trim()
-        if (cardNumber.isEmpty() || expiry.isEmpty() || cvv.isEmpty()) {
-            Toast.makeText(this, "Please fill all payment details", Toast.LENGTH_SHORT).show()
+
+        val params = cardInputWidget.paymentMethodCreateParams
+        if (params == null) {
+            Toast.makeText(this, "Please enter valid card details", Toast.LENGTH_SHORT).show()
             return
         }
 
         setLoading(true)
+
+        val stripe = Stripe(
+            applicationContext,
+            getString(R.string.stripe_publishable_key)
+        )
+
+        stripe.createPaymentMethod(params, callback = object : ApiResultCallback<PaymentMethod> {
+            override fun onSuccess(result: PaymentMethod) {
+                val paymentMethodId = result.id
+                if (paymentMethodId != null) {
+                    submitBookingWithPaymentMethod(paymentMethodId)
+                } else {
+                    setLoading(false)
+                    Toast.makeText(this@BookingActivity, "Failed to parse Stripe PaymentMethod", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onError(e: Exception) {
+                setLoading(false)
+                Toast.makeText(this@BookingActivity, "Stripe Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
+        })
+    }
+
+    private fun submitBookingWithPaymentMethod(paymentMethodId: String) {
+        val start = selectedStartTime ?: return
+        val end = selectedEndTime ?: return
 
         val request = ReservationCheckoutRequest(
             spaceId = spaceId,
             startTime = start.toString(),
             endTime = end.toString(),
             paymentMethod = PaymentMethodRequest(
-                cardNumber = cardNumber,
-                expiryDate = expiry,
-                cvv = cvv
+                cardNumber = paymentMethodId, // Send pm_... token inside cardNumber
+                expiryDate = "",
+                cvv = ""
             )
         )
 

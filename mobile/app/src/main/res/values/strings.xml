@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">WorkSpaceMobile</string>
+    <string name="google_web_client_id">378684624234-cb1a00n4aqeckgfctc76qe76bpb6269i.apps.googleusercontent.com</string>
+    <string name="stripe_publishable_key">pk_test_51Tb0qaRxf0wwUREbwuOKyXnalLLlQI8JNkJxvoRiOhcu0TT81nB6gLHRltEMLlDbx2jjpw792G5eEy6eVWfhTtdC00PJ3CIleB</string>
 </resources>

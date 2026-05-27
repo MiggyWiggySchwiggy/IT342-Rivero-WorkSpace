@@ -11,6 +11,7 @@ import edu.cit.rivero.workspace.models.ReservationCheckoutRequest
 import edu.cit.rivero.workspace.models.ReservationResponseData
 import edu.cit.rivero.workspace.models.Space
 import edu.cit.rivero.workspace.models.SpaceRequest
+import edu.cit.rivero.workspace.models.GoogleLoginRequest
 import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.http.Body
@@ -32,6 +33,9 @@ interface WorkSpaceApi {
     @POST("api/v1/auth/login")
     fun loginUser(@Body request: LoginRequest): Call<ApiResponse<AuthResponseData>>
 
+    @POST("api/v1/auth/google")
+    fun googleLoginUser(@Body request: GoogleLoginRequest): Call<ApiResponse<AuthResponseData>>
+
     // ── Spaces (Public) ──
     @GET("api/v1/spaces")
     fun getSpaces(): Call<ApiResponse<List<Space>>>
@@ -41,6 +45,12 @@ interface WorkSpaceApi {
 
     @GET("api/v1/spaces/{spaceId}/availability")
     fun getSpaceAvailability(@Path("spaceId") spaceId: String): Call<ApiResponse<List<AvailabilitySlot>>>
+
+    @PUT("api/v1/spaces/{spaceId}/availability/replace")
+    fun replaceSpaceAvailability(
+        @Path("spaceId") spaceId: String,
+        @Body slots: List<AvailabilitySlot>
+    ): Call<ApiResponse<List<AvailabilitySlot>>>
 
     @GET("api/v1/spaces/{spaceId}/bookings")
     fun getSpaceBookings(@Path("spaceId") spaceId: String): Call<ApiResponse<List<BookedSlot>>>

@@ -59,6 +59,10 @@ dependencies {
     // Image Loading
     implementation("io.coil-kt:coil:2.6.0")
 
+    // Third-Party Integrations
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+    implementation("com.stripe:stripe-android:20.35.0")
+
     // Testing
     implementation(libs.androidx.junit.ktx)
     testImplementation("junit:junit:4.13.2")

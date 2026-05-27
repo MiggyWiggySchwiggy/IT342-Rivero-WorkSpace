@@ -58,7 +58,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/google").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/spaces/**").permitAll()
                         .requestMatchers("/api/v1/**").authenticated()
@@ -86,9 +86,9 @@ public class SecurityConfig {
                                 newUser.setPasswordHash(""); // Fixed to setPasswordHash
 
                                 // 3. Properly fetch the Role entity from the database
-                                Role defaultRole = roleRepository.findByRoleName("USER").orElseGet(() -> {
+                                Role defaultRole = roleRepository.findByRoleName("ROLE_USER").orElseGet(() -> {
                                     Role r = new Role();
-                                    r.setRoleName("USER");
+                                    r.setRoleName("ROLE_USER");
                                     return roleRepository.save(r);
                                 });
                                 newUser.setRole(defaultRole);

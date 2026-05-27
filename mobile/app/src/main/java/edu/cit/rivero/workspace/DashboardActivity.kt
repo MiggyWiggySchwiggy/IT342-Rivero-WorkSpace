@@ -29,6 +29,8 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var spaceAdapter: SpaceAdapter
     private lateinit var etSearch: EditText
     private var allSpaces: List<Space> = emptyList()
+    private var searchQuery: String = ""
+    private var selectedTypeFilter: String = "All"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,10 +55,24 @@ class DashboardActivity : AppCompatActivity() {
         etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                filterSpaces(s.toString())
+                searchQuery = s.toString()
+                applyFilters()
             }
             override fun afterTextChanged(s: Editable?) {}
         })
+
+        // Wire ChipGroup Filters
+        val chipGroup = findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupFilters)
+        chipGroup?.setOnCheckedStateChangeListener { _, checkedIds ->
+            if (checkedIds.isNotEmpty()) {
+                val selectedChipId = checkedIds.first()
+                val chip = findViewById<com.google.android.material.chip.Chip>(selectedChipId)
+                selectedTypeFilter = chip?.text?.toString() ?: "All"
+            } else {
+                selectedTypeFilter = "All"
+            }
+            applyFilters()
+        }
 
         // Wire up bottom navigation tabs
         findViewById<TextView>(R.id.navBookings)?.setOnClickListener {
@@ -69,18 +85,26 @@ class DashboardActivity : AppCompatActivity() {
         fetchSpaces()
     }
 
-    private fun filterSpaces(query: String) {
-        if (query.isEmpty()) {
-            spaceAdapter.updateSpaces(allSpaces)
-        } else {
-            val lowerCaseQuery = query.lowercase()
-            val filtered = allSpaces.filter {
-                it.name.lowercase().contains(lowerCaseQuery) || 
-                it.type.lowercase().contains(lowerCaseQuery) ||
-                it.location.lowercase().contains(lowerCaseQuery)
+    private fun applyFilters() {
+        val filtered = allSpaces.filter { space ->
+            val matchesSearch = if (searchQuery.isEmpty()) {
+                true
+            } else {
+                val query = searchQuery.lowercase()
+                space.name.lowercase().contains(query) ||
+                space.type.lowercase().contains(query) ||
+                space.location.lowercase().contains(query)
             }
-            spaceAdapter.updateSpaces(filtered)
+
+            val matchesType = if (selectedTypeFilter.equals("All", ignoreCase = true)) {
+                true
+            } else {
+                space.type.equals(selectedTypeFilter, ignoreCase = true)
+            }
+
+            matchesSearch && matchesType
         }
+        spaceAdapter.updateSpaces(filtered)
     }
 
     private fun fetchSpaces() {
@@ -127,7 +151,7 @@ class DashboardActivity : AppCompatActivity() {
             val space = spaces[position]
             holder.tvName.text = space.name
             holder.tvType.text = "${space.type} • ${space.capacity} People"
-            holder.tvPrice.text = "$${space.hourlyRate} / hr"
+            holder.tvPrice.text = "₱${space.hourlyRate} / hr"
 
             // Parse image URL (comma-separated list)
             val imageUrls = space.imageUrl?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }

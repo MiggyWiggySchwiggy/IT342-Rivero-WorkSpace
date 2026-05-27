@@ -33,11 +33,13 @@ class AdminDashboardActivity : AppCompatActivity() {
 
     private lateinit var tabSpaces: TextView
     private lateinit var tabReservations: TextView
+    private lateinit var tabAnalytics: TextView
     private lateinit var contentFrame: FrameLayout
 
     // Views inflated into contentFrame
     private var spacesView: View? = null
     private var reservationsView: View? = null
+    private var analyticsView: View? = null
 
     private var allSpaces: List<Space> = emptyList()
     private var allReservations: List<AdminReservationItem> = emptyList()
@@ -66,6 +68,7 @@ class AdminDashboardActivity : AppCompatActivity() {
 
         tabSpaces = findViewById(R.id.tabSpaces)
         tabReservations = findViewById(R.id.tabReservations)
+        tabAnalytics = findViewById(R.id.tabAnalytics)
         contentFrame = findViewById(R.id.adminContentFrame)
 
         // Greeting
@@ -80,6 +83,7 @@ class AdminDashboardActivity : AppCompatActivity() {
 
         tabSpaces.setOnClickListener { showSpacesTab() }
         tabReservations.setOnClickListener { showReservationsTab() }
+        tabAnalytics.setOnClickListener { showAnalyticsTab() }
 
         // Start with Spaces tab
         showSpacesTab()
@@ -90,7 +94,7 @@ class AdminDashboardActivity : AppCompatActivity() {
     // ══════════════════════════════════════════
 
     private fun showSpacesTab() {
-        setTabSelected(tabSpaces, tabReservations)
+        setTabSelected(tabSpaces, tabReservations, tabAnalytics)
         if (spacesView == null) {
             spacesView = LayoutInflater.from(this).inflate(R.layout.fragment_admin_spaces, contentFrame, false)
             setupSpacesView(spacesView!!)
@@ -101,7 +105,7 @@ class AdminDashboardActivity : AppCompatActivity() {
     }
 
     private fun showReservationsTab() {
-        setTabSelected(tabReservations, tabSpaces)
+        setTabSelected(tabReservations, tabSpaces, tabAnalytics)
         if (reservationsView == null) {
             reservationsView = LayoutInflater.from(this).inflate(R.layout.fragment_admin_reservations, contentFrame, false)
             setupReservationsView(reservationsView!!)
@@ -111,11 +115,140 @@ class AdminDashboardActivity : AppCompatActivity() {
         if (allReservations.isEmpty()) loadReservations()
     }
 
-    private fun setTabSelected(selected: TextView, unselected: TextView) {
+    private fun showAnalyticsTab() {
+        setTabSelected(tabAnalytics, tabSpaces, tabReservations)
+        if (analyticsView == null) {
+            analyticsView = LayoutInflater.from(this).inflate(R.layout.fragment_admin_analytics, contentFrame, false)
+        }
+        contentFrame.removeAllViews()
+        contentFrame.addView(analyticsView)
+        loadAnalyticsData()
+    }
+
+    private fun setTabSelected(selected: TextView, unselected1: TextView, unselected2: TextView) {
         selected.setBackgroundResource(R.drawable.tab_selected_bg)
         selected.setTextColor(0xFF1D4ED8.toInt())  // blue-700
-        unselected.setBackgroundColor(0x00000000)  // transparent
-        unselected.setTextColor(0xFF6B7280.toInt()) // gray-500
+        unselected1.setBackgroundColor(0x00000000)  // transparent
+        unselected1.setTextColor(0xFF6B7280.toInt()) // gray-500
+        unselected2.setBackgroundColor(0x00000000)  // transparent
+        unselected2.setTextColor(0xFF6B7280.toInt()) // gray-500
+    }
+
+    private fun loadAnalyticsData() {
+        val view = analyticsView ?: return
+        val progress = view.findViewById<ProgressBar>(R.id.progressBarAnalytics)
+        val contentLayout = view.findViewById<View>(R.id.layoutAnalyticsContent)
+
+        progress.visibility = View.VISIBLE
+        contentLayout.visibility = View.GONE
+
+        // Fetch spaces first
+        ApiClient.instance.getSpaces().enqueue(object : Callback<ApiResponse<List<Space>>> {
+            override fun onResponse(call: Call<ApiResponse<List<Space>>>, spacesResponse: Response<ApiResponse<List<Space>>>) {
+                if (spacesResponse.isSuccessful && spacesResponse.body()?.success == true) {
+                    val spaces = spacesResponse.body()?.data ?: emptyList()
+                    
+                    // Fetch reservations
+                    ApiClient.instance.getAllReservations().enqueue(object : Callback<ApiResponse<List<AdminReservationItem>>> {
+                        override fun onResponse(
+                            call: Call<ApiResponse<List<AdminReservationItem>>>,
+                            resResponse: Response<ApiResponse<List<AdminReservationItem>>>
+                        ) {
+                            progress.visibility = View.GONE
+                            contentLayout.visibility = View.VISIBLE
+
+                            if (resResponse.isSuccessful && resResponse.body()?.success == true) {
+                                val reservations = resResponse.body()?.data ?: emptyList()
+                                computeAndDisplayAnalytics(spaces, reservations)
+                            } else {
+                                Toast.makeText(this@AdminDashboardActivity, "Failed to load bookings for analytics", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+
+                        override fun onFailure(call: Call<ApiResponse<List<AdminReservationItem>>>, t: Throwable) {
+                            progress.visibility = View.GONE
+                            contentLayout.visibility = View.VISIBLE
+                            Toast.makeText(this@AdminDashboardActivity, "Network error", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+                } else {
+                    progress.visibility = View.GONE
+                    contentLayout.visibility = View.VISIBLE
+                    Toast.makeText(this@AdminDashboardActivity, "Failed to load spaces for analytics", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<ApiResponse<List<Space>>>, t: Throwable) {
+                progress.visibility = View.GONE
+                contentLayout.visibility = View.VISIBLE
+                Toast.makeText(this@AdminDashboardActivity, "Network error", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun computeAndDisplayAnalytics(spaces: List<Space>, reservations: List<AdminReservationItem>) {
+        val view = analyticsView ?: return
+        val tvRevenue = view.findViewById<TextView>(R.id.tvKpiRevenue)
+        val tvBookings = view.findViewById<TextView>(R.id.tvKpiBookings)
+        val tvActive = view.findViewById<TextView>(R.id.tvKpiActive)
+        val tvSpaces = view.findViewById<TextView>(R.id.tvKpiSpaces)
+        val layoutTopSpaces = view.findViewById<android.widget.LinearLayout>(R.id.layoutTopSpacesContainer)
+
+        var totalRevenue = 0.0
+        var activeBookings = 0
+        for (res in reservations) {
+            val isCancelled = res.status.equals("CANCELLED", ignoreCase = true)
+            if (!isCancelled) {
+                val amount = res.totalAmount.toDoubleOrNull() ?: 0.0
+                totalRevenue += amount
+            }
+            if (res.status.equals("CONFIRMED", ignoreCase = true) || res.status.equals("ACTIVE", ignoreCase = true)) {
+                activeBookings++
+            }
+        }
+
+        tvRevenue.text = "₱%,.2f".format(totalRevenue)
+        tvBookings.text = reservations.size.toString()
+        tvActive.text = activeBookings.toString()
+        tvSpaces.text = spaces.size.toString()
+
+        val bookingCounts = reservations.groupBy { it.spaceId }
+            .mapValues { it.value.size }
+        val sortedSpaces = bookingCounts.toList().sortedByDescending { it.second }
+        val spaceNameMap = spaces.associate { it.id to it.name }
+
+        layoutTopSpaces.removeAllViews()
+        if (sortedSpaces.isEmpty()) {
+            val emptyTv = TextView(this).apply {
+                text = "No booking data available yet."
+                setTextColor(0xFF64748B.toInt())
+                textSize = 14f
+            }
+            layoutTopSpaces.addView(emptyTv)
+        } else {
+            val topN = sortedSpaces.take(5)
+            for ((index, pair) in topN.withIndex()) {
+                val spaceId = pair.first
+                val count = pair.second
+                val spaceName = spaceNameMap[spaceId] ?: "Space #${spaceId}"
+
+                val rowView = LayoutInflater.from(this).inflate(android.R.layout.simple_list_item_2, layoutTopSpaces, false)
+                val text1 = rowView.findViewById<TextView>(android.R.id.text1)
+                val text2 = rowView.findViewById<TextView>(android.R.id.text2)
+
+                text1.text = "#${index + 1}  $spaceName"
+                text1.textSize = 15f
+                text1.setTypeface(null, android.graphics.Typeface.BOLD)
+                text1.setTextColor(0xFF1E293B.toInt())
+
+                text2.text = "$count bookings"
+                text2.textSize = 13f
+                text2.setTextColor(0xFF64748B.toInt())
+                text2.setPadding(0, 2, 0, 8)
+
+                layoutTopSpaces.addView(rowView)
+            }
+        }
     }
 
     // ══════════════════════════════════════════
@@ -151,6 +284,7 @@ class AdminDashboardActivity : AppCompatActivity() {
                         rv.adapter = SpaceAdminAdapter(allSpaces,
                             onEdit = { space -> openEditSpace(space) },
                             onImages = { space -> openImageUpload(space) },
+                            onAvailability = { space -> openAvailabilityManager(space) },
                             onDelete = { space -> confirmDeleteSpace(space) }
                         )
                     }
@@ -181,6 +315,14 @@ class AdminDashboardActivity : AppCompatActivity() {
             putExtra(SpaceFormActivity.EXTRA_SPACE_POLICY, space.cancellationPolicy)
         }
         launchSpaceForm.launch(intent)
+    }
+
+    private fun openAvailabilityManager(space: Space) {
+        val intent = Intent(this, AdminAvailabilityActivity::class.java).apply {
+            putExtra("SPACE_ID", space.id)
+            putExtra("SPACE_NAME", space.name)
+        }
+        startActivity(intent)
     }
 
     private fun openImageUpload(space: Space) {
@@ -313,6 +455,7 @@ class AdminDashboardActivity : AppCompatActivity() {
         private val spaces: List<Space>,
         private val onEdit: (Space) -> Unit,
         private val onImages: (Space) -> Unit,
+        private val onAvailability: (Space) -> Unit,
         private val onDelete: (Space) -> Unit
     ) : RecyclerView.Adapter<SpaceAdminAdapter.VH>() {
 
@@ -325,6 +468,7 @@ class AdminDashboardActivity : AppCompatActivity() {
             val btnEdit: Button = view.findViewById(R.id.btnEditSpace)
             val btnImages: Button = view.findViewById(R.id.btnUploadImages)
             val btnDelete: Button = view.findViewById(R.id.btnDeleteSpace)
+            val btnManageAvailability: Button = view.findViewById(R.id.btnManageAvailability)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
@@ -347,6 +491,7 @@ class AdminDashboardActivity : AppCompatActivity() {
 
             holder.btnEdit.setOnClickListener { onEdit(space) }
             holder.btnImages.setOnClickListener { onImages(space) }
+            holder.btnManageAvailability.setOnClickListener { onAvailability(space) }
             holder.btnDelete.setOnClickListener { onDelete(space) }
         }
 

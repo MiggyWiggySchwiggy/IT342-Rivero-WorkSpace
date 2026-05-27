@@ -28,6 +28,12 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(responseData));
     }
 
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse<AuthResponseData>> googleLogin(@RequestBody GoogleLoginRequest request) {
+        AuthResponseData responseData = authService.googleLogin(request.getIdToken());
+        return ResponseEntity.ok(ApiResponse.success(responseData));
+    }
+
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserDto>> getCurrentUser() {
         UserDto userDto = authService.getCurrentUser();

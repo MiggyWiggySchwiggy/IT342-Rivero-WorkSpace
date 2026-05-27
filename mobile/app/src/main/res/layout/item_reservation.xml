@@ -76,4 +76,17 @@
 
     </LinearLayout>
 
+    <Button
+        android:id="@+id/btnCancelReservation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginTop="8dp"
+        android:text="Cancel Reservation"
+        android:textColor="#DC2626"
+        android:background="?attr/selectableItemBackground"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
 </LinearLayout>

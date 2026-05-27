@@ -94,6 +94,16 @@
         android:gravity="end">
 
         <Button
+            android:id="@+id/btnManageAvailability"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Hours"
+            android:textSize="13sp"
+            android:layout_marginEnd="8dp"
+            android:backgroundTint="#F5F3FF"
+            android:textColor="#7C3AED"/>
+
+        <Button
             android:id="@+id/btnEditSpace"
             android:layout_width="wrap_content"
             android:layout_height="36dp"

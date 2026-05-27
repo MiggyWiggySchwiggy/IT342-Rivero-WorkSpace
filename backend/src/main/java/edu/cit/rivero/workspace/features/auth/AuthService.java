@@ -106,4 +106,51 @@ public class AuthService {
                 user.getRole().getRoleName()
         );
     }
+
+    public AuthResponseData googleLogin(String idToken) {
+        if (idToken == null || idToken.isBlank()) {
+            throw new RuntimeException("Google ID token is required.");
+        }
+        String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
+        org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+        try {
+            java.util.Map<String, Object> response = restTemplate.getForObject(url, java.util.Map.class);
+            if (response == null || response.containsKey("error")) {
+                throw new RuntimeException("Invalid Google ID token: " + (response != null ? response.get("error_description") : "unknown error"));
+            }
+
+            String email = (String) response.get("email");
+            String name = (String) response.get("name");
+            String givenName = (String) response.get("given_name");
+            String familyName = (String) response.get("family_name");
+
+            if (email == null) {
+                throw new RuntimeException("Email not provided by Google token.");
+            }
+
+            User user = userRepository.findByEmail(email).orElseGet(() -> {
+                User newUser = new User();
+                newUser.setEmail(email);
+                newUser.setPasswordHash(""); 
+                newUser.setFirstName(givenName != null ? givenName : (name != null ? name.split(" ")[0] : "Google"));
+                newUser.setLastName(familyName != null ? familyName : (name != null && name.contains(" ") ? name.substring(name.indexOf(" ") + 1) : "User"));
+                
+                Role defaultRole = roleRepository.findByRoleName("ROLE_USER").orElseGet(() -> {
+                    Role r = new Role();
+                    r.setRoleName("ROLE_USER");
+                    return roleRepository.save(r);
+                });
+                newUser.setRole(defaultRole);
+                newUser.setCreatedAt(LocalDateTime.now());
+                return userRepository.save(newUser);
+            });
+
+            // Send a security alert email upon successful login
+            emailService.sendLoginAlertEmail(user.getEmail(), user.getFirstName());
+
+            return generateAuthResponse(user);
+        } catch (Exception e) {
+            throw new RuntimeException("Google authentication failed: " + e.getMessage(), e);
+        }
+    }
 }

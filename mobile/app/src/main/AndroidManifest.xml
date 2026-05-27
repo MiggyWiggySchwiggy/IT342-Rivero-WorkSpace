@@ -17,7 +17,7 @@
         android:theme="@style/Theme.WorkSpaceMobile">
 
         <!-- Launcher -->
-        <activity android:name=".LoginActivity" android:exported="true">
+        <activity android:name=".WelcomeActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -25,6 +25,7 @@
         </activity>
 
         <!-- Auth -->
+        <activity android:name=".LoginActivity" />
         <activity android:name=".RegisterActivity" />
 
         <!-- User Screens -->
